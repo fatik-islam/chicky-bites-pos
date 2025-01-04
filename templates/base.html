@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chicky Bites POS</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Custom CSS (match logo color scheme) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <!-- Navbar / Header -->
+  <nav class="navbar navbar-expand-lg" style="background-color: #f04124;">
+    <div class="container-fluid">
+      <!-- Brand / Logo -->
+      <a class="navbar-brand text-light fw-bold" href="{{ url_for('dashboard') }}">
+        <img 
+          src="{{ url_for('static', filename='images/chicky_bites_logo.png') }}" 
+          alt="Chicky Bites Logo" 
+          height="80" 
+          style="margin-right: 10px;"
+        >
+        Enjoy your Apetite!
+      </a>
+
+      <!-- Toggler button (for mobile devices) -->
+      <button 
+        class="navbar-toggler" 
+        type="button" 
+        data-bs-toggle="collapse" 
+        data-bs-target="#navbarSupportedContent" 
+        aria-controls="navbarSupportedContent" 
+        aria-expanded="false" 
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon" style="filter: invert(100%);"></span>
+      </button>
+
+      <!-- Navbar links -->
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          {% if session.get('user_id') %}
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('categories') }}">Categories</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('products') }}">Products</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('orders') }}">Orders</a>
+            </li>
+            
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('logout') }}">Logout</a>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('login') }}">Login</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main container for content -->
+  <div class="container mt-4">
+    <!-- Flash messages (e.g., success/error notifications) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    
+    <!-- This is where each page's unique content goes -->
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Bootstrap JS (bundle includes Popper) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  ></script>
+
+  <!-- Custom Print JS (optional) -->
+  <script src="{{ url_for('static', filename='js/print.js') }}"></script>
+</body>
+</html>
+

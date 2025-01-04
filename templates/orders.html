@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>New Order</h3>
+
+<div class="row">
+  <!-- Left side: Cart table & totals -->
+  <div class="col-md-7">
+    <h5>Order Items</h5>
+    <table class="table table-bordered" id="orderTable">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th style="width:90px;">Qty</th>
+          <th>Price</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Cart items inserted via JavaScript -->
+      </tbody>
+    </table>
+
+    <!-- Totals display -->
+    <div class="row mb-3">
+      <div class="col text-end">
+        <p>Sub total: <span id="subTotal">0.00</span></p>
+        <p>GST (0.00%): <span id="gstAmount">0.00</span></p>
+        <p>Net amount: <span id="netAmount">0.00</span></p>
+      </div>
+    </div>
+
+    <!-- Order action buttons -->
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" id="saveOrderBtn">Save</button>
+      <button class="btn btn-secondary" id="cancelOrderBtn">Cancel order</button>
+      <button class="btn btn-success" id="printBtn">Print receipt</button>
+    </div>
+  </div>
+
+  <!-- Right side: Search, category filters, product buttons -->
+  <div class="col-md-5">
+    <div class="mb-3">
+      <input
+        type="text"
+        id="productSearch"
+        class="form-control"
+        placeholder="Search and add products"
+      />
+    </div>
+
+    <!-- Category Buttons -->
+    <div class="mb-3 d-flex flex-wrap" style="gap: 6px;">
+      <!-- 'All' filter -->
+      <button class="btn btn-dark categoryFilterBtn" data-category="all">All</button>
+      {% for cat in categories %}
+        <button
+          class="btn btn-secondary categoryFilterBtn"
+          data-category="{{ cat.id }}"
+        >
+          {{ cat.name }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <!-- Product Buttons -->
+    <div class="d-flex flex-wrap" style="gap: 6px;">
+      {% for product in products %}
+        <button
+          class="btn btn-primary productBtn"
+          data-id="{{ product.id }}"
+          data-name="{{ product.name }}"
+          data-price="{{ product.price }}"
+          data-category="{{ product.category_id }}"
+        >
+          {{ product.name }}
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Basic front-end cart
+  let cart = [];
+  const orderTableBody = document.querySelector('#orderTable tbody');
+  const subTotalEl     = document.getElementById('subTotal');
+  const gstAmountEl    = document.getElementById('gstAmount');
+  const netAmountEl    = document.getElementById('netAmount');
+
+  function addToCart(prodId, prodName, prodPrice) {
+    const existingItem = cart.find(item => item.id === prodId);
+    if (existingItem) {
+      existingItem.qty += 1;
+      existingItem.amount = existingItem.qty * existingItem.price;
+    } else {
+      cart.push({
+        id: prodId,
+        name: prodName,
+        price: parseFloat(prodPrice),
+        qty: 1,
+        amount: parseFloat(prodPrice)
+      });
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    orderTableBody.innerHTML = '';
+    let subtotal = 0;
+
+    cart.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${item.name}</td>
+        <td>
+          <input
+            type="number"
+            min="1"
+            value="${item.qty}"
+            data-id="${item.id}"
+            class="form-control cartQty"
+            style="width:70px;"
+          >
+        </td>
+        <td>${item.price.toFixed(2)}</td>
+        <td>${item.amount.toFixed(2)}</td>
+      `;
+      orderTableBody.appendChild(row);
+      subtotal += item.amount;
+    });
+
+    // Attach event to quantity inputs
+    document.querySelectorAll('.cartQty').forEach(input => {
+      input.addEventListener('change', function(e) {
+        const newQty = parseInt(e.target.value);
+        const prodId = e.target.dataset.id;
+        const cartItem = cart.find(i => i.id === prodId);
+        if (cartItem && newQty >= 1) {
+          cartItem.qty = newQty;
+          cartItem.amount = cartItem.price * newQty;
+        }
+        renderCart();
+      });
+    });
+
+    // Example (hardcoded) GST = 0% here
+    subTotalEl.textContent  = subtotal.toFixed(2);
+    gstAmountEl.textContent = '0.00';
+    netAmountEl.textContent = subtotal.toFixed(2);
+  }
+
+  // Product button clicks
+  document.querySelectorAll('.productBtn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const prodId = this.dataset.id;
+      const prodName = this.dataset.name;
+      const prodPrice = this.dataset.price;
+      addToCart(prodId, prodName, prodPrice);
+    });
+  });
+
+  // Category filter
+  document.querySelectorAll('.categoryFilterBtn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const catId = this.dataset.category;
+      document.querySelectorAll('.productBtn').forEach(pBtn => {
+        if (catId === 'all') {
+          pBtn.style.display = 'inline-block';
+        } else {
+          pBtn.style.display = (pBtn.dataset.category === catId) ? 'inline-block' : 'none';
+        }
+      });
+    });
+  });
+
+  // Product search
+  const productSearch = document.getElementById('productSearch');
+  productSearch.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.productBtn').forEach(pBtn => {
+      const name = pBtn.dataset.name.toLowerCase();
+      pBtn.style.display = name.includes(query) ? 'inline-block' : 'none';
+    });
+  });
+
+  // Print button
+  document.getElementById('printBtn').addEventListener('click', function() {
+    window.print();
+  });
+
+  // Save order (stub)
+  document.getElementById('saveOrderBtn').addEventListener('click', function() {
+    alert('Order saved (placeholder). Implement server POST if needed.');
+  });
+
+  // Cancel order
+  document.getElementById('cancelOrderBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to cancel this order?')) {
+      cart = [];
+      renderCart();
+    }
+  });
+</script>
+{% endblock %}
+

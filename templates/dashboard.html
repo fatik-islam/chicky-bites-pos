@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Welcome to Chicky Bites POS Dashboard</h1>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h4>Total Orders: {{ total_orders }}</h4>
+        <h4>Total Revenue: ${{ '{:.2f}'.format(total_revenue) }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <h5>Recent Orders</h5>
+    <ul class="list-group">
+      {% for order in recent_orders %}
+      <li class="list-group-item">
+        Order #{{ order.id }} - {{ order.date_ordered }} - ${{ '{:.2f}'.format(order.total_amount) }}
+      </li>
+      {% endfor %}
+      {% if recent_orders|length == 0 %}
+      <li class="list-group-item">No recent orders</li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Order #{{ order.id }}</h3>
+<p>Date: {{ order.date_ordered }}</p>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Qty</th>
+      <th>Price</th>
+      <th>Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in order.items %}
+    <tr>
+      <td>{{ item.product.name }}</td>
+      <td>{{ item.quantity }}</td>
+      <td>{{ '{:.2f}'.format(item.price) }}</td>
+      <td>{{ '{:.2f}'.format(item.price * item.quantity) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4>Total: {{ '{:.2f}'.format(order.total_amount) }}</h4>
+<button class="btn btn-success" onclick="window.print()">Print this Order</button>
+{% endblock %}
+
