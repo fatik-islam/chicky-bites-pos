@@ -1,0 +1,577 @@
+/* UPDATED: static/css/styles.css */
+
+/* General Styles */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: 'Open Sans', sans-serif;
+  line-height: 1.6;
+  background-color: #FAFAFA;
+  color: #343a40;
+  margin: 0;
+  padding: 0;
+}
+
+main {
+  flex: 1;
+}
+
+/* Navbar */
+.navbar-custom {
+  background: linear-gradient(to right, #512DA8, #3F51B5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.navbar-custom .navbar-brand {
+  display: flex;
+  align-items: center;
+  color: #FFFFFF; /* White Title */
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.navbar-custom .navbar-brand img {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.navbar-custom .navbar-brand span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #FFFFFF; /* White for Tagline */
+  font-style: italic;
+  position: relative;
+}
+
+.navbar-custom .navbar-brand span::after {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(to right, #1976D2, #512DA8);
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.navbar-custom .nav-link {
+  color: #FFFFFF;
+  margin-right: 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.navbar-custom .nav-link i {
+  margin-right: 5px;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link:focus {
+  color: #FFD54F;
+  text-decoration: none;
+}
+
+.navbar-custom .nav-link:hover i,
+.navbar-custom .nav-link:focus i {
+  transform: scale(1.2);
+  color: #FFD54F;
+}
+
+.navbar-custom .nav-link.active {
+  border-bottom: 2px solid #FFD54F;
+}
+
+.navbar-custom .dropdown-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.navbar-custom .dropdown-menu.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.navbar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
+  border: 2px solid #FFD54F;
+}
+
+.navbar-custom .dropdown-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-custom .dropdown-toggle span {
+  margin-left: 5px;
+}
+
+.navbar-custom .nav-item.dropdown .dropdown-menu a.dropdown-item {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-custom .nav-item.dropdown .dropdown-menu a.dropdown-item i {
+  margin-right: 8px;
+}
+
+/* Remove icons of categories */
+.category-card i {
+  display: none;
+}
+
+/* Footer */
+footer {
+  background-color: #424242;
+  color: #616161;
+  padding: 15px 0;
+  text-align: center;
+  margin-top: auto;
+}
+
+footer p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Table */
+.table {
+  background-color: white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+  background-color: #512DA8;
+  color: white;
+  text-align: center;
+  font-weight: 600;
+}
+
+.table td {
+  vertical-align: middle;
+  color: #424242;
+}
+
+.table-responsive {
+  margin-bottom: 20px;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 4px;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.btn-primary {
+  background-color: #1976D2;
+  border-color: #1976D2;
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: #0D47A1;
+  border-color: #0D47A1;
+  color: #FFFFFF;
+}
+
+.btn-success {
+  background-color: #43A047;
+  border-color: #43A047;
+  color: #FFFFFF;
+}
+
+.btn-success:hover {
+  background-color: #2E7D32;
+  border-color: #2E7D32;
+  color: #FFFFFF;
+}
+
+.btn-danger {
+  background-color: #E53935;
+  border-color: #E53935;
+  color: #FFFFFF;
+}
+
+.btn-danger:hover {
+  background-color: #D32F2F;
+  border-color: #D32F2F;
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+  border-color: #545b62;
+  color: #FFFFFF;
+}
+
+.btn-outline-primary {
+  color: #1976D2;
+  border-color: #1976D2;
+}
+
+.btn-outline-primary:hover {
+  background-color: #1976D2;
+  color: #FFFFFF;
+}
+
+.btn-outline-success {
+  color: #43A047;
+  border-color: #43A047;
+}
+
+.btn-outline-success:hover {
+  background-color: #43A047;
+  color: #FFFFFF;
+}
+
+.btn-outline-danger {
+  color: #E53935;
+  border-color: #E53935;
+}
+
+.btn-outline-danger:hover {
+  background-color: #E53935;
+  color: #FFFFFF;
+}
+
+/* Forms */
+.form-label {
+  font-weight: bold;
+  color: #283593;
+}
+
+.form-control, .form-select {
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+  box-shadow: 0 0 5px rgba(25, 118, 210, 0.5);
+  border-color: #1976D2;
+}
+
+.invalid-feedback {
+  font-size: 0.875em;
+  color: #E53935;
+}
+
+.valid-feedback {
+  font-size: 0.875em;
+  color: #43A047;
+}
+
+/* Card Components */
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  background: linear-gradient(to right, #512DA8, #3F51B5);
+  color: #FFFFFF;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.card-text {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Product Cards: make them same style as categories & clickable to add to cart */
+.product-item .card {
+  cursor: pointer;
+  background: linear-gradient(to bottom right, #42A5F5, #1E88E5);
+  color: white;
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-item .card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+}
+
+/* Hide images for no_products, no_carts, no_orders */
+#noProducts img,
+#emptyCart img,
+#noOrders img {
+  display: none;
+}
+
+/* Modal Styles */
+.modal-header {
+  background-color: #283593;
+  color: white;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.modal-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.modal-body {
+  color: #424242;
+}
+
+.modal-footer {
+  background-color: #f8f9fa;
+}
+
+.modal-content {
+  border-radius: 12px;
+}
+
+/* Tooltip Styles */
+.tooltip-inner {
+  background-color: #616161;
+  color: #FFFFFF;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 0.875rem;
+}
+
+.tooltip.bs-tooltip-top .arrow::before,
+.tooltip.bs-tooltip-bottom .arrow::before,
+.tooltip.bs-tooltip-start .arrow::before,
+.tooltip.bs-tooltip-end .arrow::before {
+  border-color: #616161;
+}
+
+/* Flash Messages */
+.alert {
+  border-radius: 4px;
+}
+
+.alert-success {
+  background-color: #C8E6C9;
+  color: #2E7D32;
+}
+
+.alert-danger {
+  background-color: #FFCDD2;
+  color: #C62828;
+}
+
+.alert-warning {
+  background-color: #FFE0B2;
+  color: #EF6C00;
+}
+
+.alert-info {
+  background-color: #BBDEFB;
+  color: #1565C0;
+}
+
+/* Chart.js Canvas */
+.chart-container {
+  position: relative;
+  margin: auto;
+  height: 40vh;
+  width: 100%;
+}
+
+/* Print Styles */
+@media print {
+  body {
+    display: block;
+  }
+  .btn-print {
+    display: none;
+  }
+  footer {
+    display: none;
+  }
+  .no-print, .no-print * {
+    display: none !important;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .navbar-custom .navbar-brand {
+    font-size: 1.25rem;
+  }
+  
+  .navbar-custom .nav-link {
+    font-size: 0.95rem;
+    margin-right: 10px;
+  }
+
+  .card-header h3, .card-header h4, .card-header h5 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-custom .nav-link {
+    font-size: 0.9rem;
+    margin-right: 8px;
+  }
+
+  h2, h3, h4, h5 {
+    font-size: 1.25rem;
+  }
+
+  .table th, .table td {
+    font-size: 0.875rem;
+  }
+
+  .btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .form-control, .form-select {
+    font-size: 0.875rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-custom .nav-link {
+    font-size: 0.85rem;
+    margin-right: 5px;
+  }
+
+  h2, h3, h4, h5 {
+    font-size: 1rem;
+  }
+
+  .table th, .table td {
+    font-size: 0.75rem;
+    padding: 0.3rem;
+  }
+
+  .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .form-control, .form-select {
+    font-size: 0.875rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+/* Additional Custom Styles */
+
+/* Order Details Modal */
+#orderDetailsContent {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Badges */
+.badge {
+  font-size: 1rem;
+  padding: 0.5em 0.75em;
+}
+
+/* Hover Effects for Buttons */
+.btn-primary:hover,
+.btn-success:hover,
+.btn-danger:hover,
+.btn-secondary:hover,
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-danger:hover {
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+/* Links */
+a {
+  color: #1976D2;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover,
+a:focus {
+  color: #0D47A1;
+  text-decoration: underline;
+}
+
+/* Ensuring Footer Stays at Bottom */
+html, body {
+  height: 100%;
+}
+
+/* Forms in Products Page */
+#addProductForm, #addSubProductForm, #editProductForm, #updateStockForm {
+  margin-bottom: 20px;
+}
+
+#add-main-subproduct-btn, #edit-add-component-btn {
+  margin-top: 10px;
+}
+
+.component-item, .edit-component-item {
+  border: 1px solid #ced4da;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.remove-main-subproduct-btn, .remove-edit-component-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #E53935;
+  cursor: pointer;
+}
+
+.remove-main-subproduct-btn:hover, .remove-edit-component-btn:hover {
+  color: #D32F2F;
+}
+
+/* Select2 Styles (if used) */
+.select2-container--default .select2-selection--single {
+  height: 38px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 36px;
+  right: 10px;
+}
+

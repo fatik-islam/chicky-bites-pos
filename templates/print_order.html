@@ -1,30 +1,215 @@
-{% extends "base.html" %}
-{% block content %}
-<h3>Order #{{ order.id }}</h3>
-<p>Date: {{ order.date_ordered }}</p>
+<!-- templates/print_order.html -->
 
-<table class="table table-bordered">
-  <thead>
-    <tr>
-      <th>Product</th>
-      <th>Qty</th>
-      <th>Price</th>
-      <th>Subtotal</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in order.items %}
-    <tr>
-      <td>{{ item.product.name }}</td>
-      <td>{{ item.quantity }}</td>
-      <td>{{ '{:.2f}'.format(item.price) }}</td>
-      <td>{{ '{:.2f}'.format(item.price * item.quantity) }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice - Order #{{ order.id }}</title>
 
-<h4>Total: {{ '{:.2f}'.format(order.total_amount) }}</h4>
-<button class="btn btn-success" onclick="window.print()">Print this Order</button>
-{% endblock %}
+    <!-- Bootstrap 5 CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+        crossorigin="anonymous"
+    />
+
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #FFFFFF;
+            margin: 20px;
+        }
+
+        /* Customer Receipt Styles */
+        .customer-receipt .card-header {
+            background-color: #283593;
+            color: #FFFFFF;
+            text-align: center;
+        }
+
+        .customer-receipt .card-footer {
+            background-color: #F5F5F5;
+            text-align: center;
+        }
+
+        /* Kitchen Print Styles */
+        .kitchen-print .card-header {
+            background-color: #424242;
+            color: #FFFFFF;
+            text-align: center;
+        }
+
+        .kitchen-print .card-footer {
+            display: none;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+        }
+
+        th, td {
+            padding: 8px;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .customer-receipt, .kitchen-print {
+                visibility: visible;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            /* Hide the print button */
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Customer Receipt Card -->
+    <div class="card customer-receipt mb-5">
+        <div class="card-header">
+            <h3>Chicky Bites Restaurant</h3>
+            <p>Jalalpur Jattan, Gujrat</p>
+            <p>Contact: 03338686289</p>
+        </div>
+        <div class="card-body">
+            <!-- Order Information -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <p><strong>Order ID:</strong> {{ order.id }}</p>
+                    <p><strong>Date:</strong> {{ order.date_ordered.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p><strong>Order Type:</strong> {{ order.order_type }}</p>
+                    {% if order.order_type == 'Dine-in' %}
+                        <p><strong>Table #:</strong> {{ order.table_number }}</p>
+                    {% elif order.order_type == 'Delivery' %}
+                        <p><strong>First Name:</strong> {{ order.first_name }}</p>
+                        <p><strong>Last Name:</strong> {{ order.last_name }}</p>
+                        <p><strong>Address:</strong> {{ order.address }}</p>
+                        <p><strong>Contact #:</strong> {{ order.contact_number }}</p>
+                    {% elif order.order_type == 'Takeaway' %}
+                        <p><strong>Customer Name:</strong> {{ order.first_name }} {{ order.last_name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Items Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Product</th>
+                            <th style="width: 10%;">Qty</th>
+                            <th style="width: 15%;">Unit Price (Rs)</th>
+                            <th style="width: 15%;">Subtotal (Rs)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.order_items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(item.price) }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(item.quantity * item.price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals Section -->
+            <div class="row">
+                <div class="col-md-6 offset-md-6">
+                    <table class="table">
+                        <tr>
+                            <th>Subtotal:</th>
+                            <td class="text-end">Rs{{ '{:.2f}'.format(order.total_amount * 0.9) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tax (10%):</th>
+                            <td class="text-end">Rs{{ '{:.2f}'.format(order.total_amount * 0.1) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Amount:</th>
+                            <td class="text-end"><strong>Rs{{ '{:.2f}'.format(order.total_amount) }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <p>Thank you for choosing Chicky Bites!</p>
+            <p>Powered by Syed Fatik Islam</p>
+            <p>For inquiries of POS, call at: +92-3127300556</p>
+        </div>
+    </div>
+
+    <!-- Kitchen Print Card -->
+    <div class="card kitchen-print">
+        <div class="card-header">
+            <h4>Kitchen Print</h4>
+        </div>
+        <div class="card-body">
+            <!-- Kitchen Order Information -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Order Type:</strong> {{ order.order_type }}</p>
+                    <p><strong>Order Number:</strong> {{ order.id }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p><strong>Name:</strong> 
+                        {% if order.order_type in ['Delivery', 'Takeaway'] %}
+                            {{ order.first_name }} {{ order.last_name }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                    <p><strong>Time:</strong> {{ order.date_ordered.strftime('%H:%M') }}</p>
+                </div>
+            </div>
+
+            <!-- Kitchen Order Items Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Product</th>
+                            <th style="width: 10%;">Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.order_items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Button -->
+    <div class="text-center mt-4 no-print">
+        <button class="btn btn-success" onclick="window.print()">Print this Receipt</button>
+    </div>
+
+    <!-- Bootstrap JS (bundle includes Popper) -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+        crossorigin="anonymous"
+    ></script>
+</body>
+</html>
 

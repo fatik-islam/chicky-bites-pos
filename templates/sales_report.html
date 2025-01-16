@@ -1,0 +1,761 @@
+<!-- templates/sales_report.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-5" style="background-color: #FFFFFF; padding: 40px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <h2 class="text-center mb-5" style="color: #333333; position: relative; display: inline-block;">
+        Comprehensive Sales Report
+        <span style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background: linear-gradient(to right, #1976D2, #512DA8); border-radius: 2px;"></span>
+    </h2>
+
+    <!-- Filter Form -->
+    <div class="card mb-5 shadow-sm" style="border: none; border-radius: 15px; background-color: #F0F4C3;">
+        <div class="card-header text-white" style="background: linear-gradient(to right, #689F38, #33691E); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+            <h5 class="mb-0" style="color: #FFFFFF; font-weight: bold;">Filter Sales Data</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('sales_report') }}" class="needs-validation" novalidate id="filterForm">
+                {{ form.hidden_tag() }}
+                <div class="row g-4 align-items-end">
+                    <div class="col-md-3">
+                        {{ form.start_date.label(class="form-label") }}
+                        {{ form.start_date(class="form-control", required=True, style="color: #424242;", placeholder="DD/MM/YYYY", id="startDate") }}
+                        {% for error in form.start_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please select a valid start date.
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.end_date.label(class="form-label") }}
+                        {{ form.end_date(class="form-control", required=True, style="color: #424242;", placeholder="DD/MM/YYYY", id="endDate") }}
+                        {% for error in form.end_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please select a valid end date.
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.order_type.label(class="form-label") }}
+                        {{ form.order_type(class="form-select", required=True) }}
+                        {% for error in form.order_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please select an order type.
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Quick Filters</label>
+                        <div class="d-flex flex-wrap">
+                            <button type="button" class="btn btn-outline-success me-2 mb-2 quick-filter-btn" data-filter="today">
+                                Today
+                            </button>
+                            <button type="button" class="btn btn-outline-success me-2 mb-2 quick-filter-btn" data-filter="last7days">
+                                Last 7 Days
+                            </button>
+                            <button type="button" class="btn btn-outline-success me-2 mb-2 quick-filter-btn" data-filter="thismonth">
+                                This Month
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-12 text-end">
+                        <button type="submit" class="btn btn-primary me-3 px-4 py-2" style="background-color: #1976D2; border: none; color: #FFFFFF;">
+                            <i class="bi bi-filter"></i> Apply Filters
+                        </button>
+                        <a href="{{ url_for('sales_report') }}" class="btn btn-outline-secondary px-4 py-2" style="color: #424242;">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sales Summary Table -->
+    <div class="card mb-5 shadow-sm" style="border: none; border-radius: 15px; background-color: #E1F5FE;">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, #0288D1, #01579B); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+            <h5 class="mb-0" style="color: #FFFFFF; font-weight: bold;">Sales Summary</h5>
+            <div>
+                <div class="btn-group" role="group" aria-label="Export Options">
+                    <button type="button" class="btn btn-success me-2 export-btn" data-format="csv" data-bs-toggle="tooltip" data-bs-placement="top" title="Export the sales summary as CSV">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                    </button>
+                    <button type="button" class="btn btn-warning export-btn" data-format="pdf" data-bs-toggle="tooltip" data-bs-placement="top" title="Export the sales summary as PDF">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-striped table-hover mb-0" id="salesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="sortable" data-sort="date" style="cursor: pointer;">
+                                Date <i class="bi bi-arrow-down-up"></i>
+                            </th>
+                            <th scope="col" class="sortable text-end" data-sort="total_sales" style="cursor: pointer;">
+                                Total Sales (Rs) <i class="bi bi-arrow-down-up"></i>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td style="color: #424242;">
+                                {{ sale.date.strftime('%d/%m/%Y') }}
+                            </td>
+                            <td class="text-end" style="color: #424242;">
+                                Rs{{ '{:.2f}'.format(sale.daily_total) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if sales|length == 0 %}
+                        <tr>
+                            <td colspan="2" class="text-center" style="color: #616161;">
+                                <i class="bi bi-info-circle-fill text-muted fs-3"></i>
+                                <p class="mt-2">No data available for the selected date range. Try adjusting your filters.</p>
+                                <a href="{{ url_for('sales_report') }}" class="btn btn-primary btn-sm px-4 py-2" style="background-color: #1976D2; border: none;">
+                                    <i class="bi bi-eye"></i> View All Sales
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Trends by Order Type -->
+    <div class="card mb-5 shadow-sm" style="border: none; border-radius: 15px; background-color: #FFF3E0;">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, #FF7043, #FF5722); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+            <h5 class="mb-0" style="color: #FFFFFF; font-weight: bold;">Sales Trends by Order Type</h5>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle chart-type-toggle" type="button" id="chartTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #1976D2; border: none; color: #FFFFFF;">
+                    Pie
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="chartTypeDropdown">
+                    <li><a class="dropdown-item chart-type-btn text-primary" href="#" data-type="pie">Pie</a></li>
+                    <li><a class="dropdown-item chart-type-btn text-success" href="#" data-type="bar">Bar</a></li>
+                    <li><a class="dropdown-item chart-type-btn text-warning" href="#" data-type="line">Line</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if sales_trends|length > 0 %}
+            <div class="chart-container" style="position: relative; height:50vh; width:100%; overflow-x: auto;">
+                <canvas id="salesChart" aria-label="Sales Trends by Order Type" role="img"></canvas>
+            </div>
+            {% else %}
+            <div class="text-center" style="color: #616161;">
+                <i class="bi bi-bar-chart-line-fill text-muted fs-3"></i>
+                <p class="mt-2">Apply filters to view sales trends by order type.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sales by Category Chart -->
+    <div class="card mb-5 shadow-sm" style="border: none; border-radius: 15px; background-color: #E8F5E9;">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #43A047; border-top-left-radius: 15px; border-top-right-radius: 15px;">
+            <h5 class="mb-0" style="color: #FFFFFF; font-weight: bold;">Sales by Category</h5>
+            <div class="dropdown">
+                <button class="btn btn-danger dropdown-toggle category-chart-type-toggle" type="button" id="categoryChartTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #D32F2F; border: none; color: #FFFFFF;">
+                    Pie
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="categoryChartTypeDropdown">
+                    <li><a class="dropdown-item category-chart-type-btn text-primary" href="#" data-type="pie">Pie</a></li>
+                    <li><a class="dropdown-item category-chart-type-btn text-success" href="#" data-type="bar">Bar</a></li>
+                    <li><a class="dropdown-item category-chart-type-btn text-danger" href="#" data-type="doughnut">Doughnut</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if category_sales|length > 0 %}
+            <div class="chart-container" style="position: relative; height:50vh; width:100%; overflow-x: auto;">
+                <canvas id="categorySalesChart" aria-label="Sales by Category" role="img"></canvas>
+            </div>
+            {% else %}
+            <div class="text-center" style="color: #616161;">
+                <i class="bi bi-bar-chart-fill text-muted fs-3"></i>
+                <p class="mt-2">No category sales data available for the selected date range.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Selling Products Chart -->
+    <div class="card mb-5 shadow-sm" style="border: none; border-radius: 15px; background-color: #FFF3E0;">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, #FF7043, #FF5722); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+            <h5 class="mb-0" style="color: #FFFFFF; font-weight: bold;">Top Selling Products</h5>
+            <div class="dropdown">
+                <button class="btn btn-info dropdown-toggle product-chart-type-toggle" type="button" id="productChartTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #0288D1; border: none; color: #FFFFFF;">
+                    Bar
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="productChartTypeDropdown">
+                    <li><a class="dropdown-item product-chart-type-btn text-success" href="#" data-type="bar">Bar</a></li>
+                    <li><a class="dropdown-item product-chart-type-btn text-primary" href="#" data-type="horizontalBar">Horizontal Bar</a></li>
+                    <li><a class="dropdown-item product-chart-type-btn text-warning" href="#" data-type="pie">Pie</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if top_products|length > 0 %}
+            <div class="chart-container" style="position: relative; height:50vh; width:100%; overflow-x: auto;">
+                <canvas id="topProductsChart" aria-label="Top Selling Products" role="img"></canvas>
+            </div>
+            {% else %}
+            <div class="text-center" style="color: #616161;">
+                <i class="bi bi-bar-chart-fill text-muted fs-3"></i>
+                <p class="mt-2">No product sales data available for the selected date range.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Handling Form Validation, Quick Filters, Sorting, and Chart Rendering -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+
+        // Bootstrap form validation with date logic
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        var startDate = document.getElementById('startDate').value;
+                        var endDate = document.getElementById('endDate').value;
+
+                        if (startDate && endDate) {
+                            // Convert DD/MM/YYYY to YYYY-MM-DD for comparison
+                            var partsStart = startDate.split('/');
+                            var partsEnd = endDate.split('/');
+                            var start = new Date(partsStart[2], partsStart[1] - 1, partsStart[0]);
+                            var end = new Date(partsEnd[2], partsEnd[1] - 1, partsEnd[0]);
+
+                            if (start > end) {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                alert('Start Date must be earlier than End Date.');
+                            }
+                        }
+
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+
+        // Quick Filter Buttons
+        document.querySelectorAll('.quick-filter-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                var filter = this.getAttribute('data-filter');
+                var startDateInput = document.getElementById('startDate');
+                var endDateInput = document.getElementById('endDate');
+                var today = new Date();
+                var startDate, endDate;
+
+                if (filter === 'today') {
+                    startDate = today.toISOString().split('T')[0];
+                    endDate = startDate;
+                } else if (filter === 'last7days') {
+                    var last7 = new Date();
+                    last7.setDate(today.getDate() - 6);
+                    startDate = last7.toISOString().split('T')[0];
+                    endDate = today.toISOString().split('T')[0];
+                } else if (filter === 'thismonth') {
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                    endDate = today.toISOString().split('T')[0];
+                }
+
+                // Convert to DD/MM/YYYY
+                function formatDate(dateStr) {
+                    var parts = dateStr.split('-');
+                    return parts[2] + '/' + parts[1] + '/' + parts[0];
+                }
+
+                startDateInput.value = formatDate(startDate);
+                endDateInput.value = formatDate(endDate);
+                document.getElementById('filterForm').submit();
+            });
+        });
+
+        // Table Sorting
+        document.querySelectorAll('.sortable').forEach(function(header) {
+            header.addEventListener('click', function() {
+                var table = document.getElementById('salesTable');
+                var tbody = table.tBodies[0];
+                var rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.querySelector('td'));
+                var index = Array.from(header.parentNode.children).indexOf(header);
+                var ascending = header.getAttribute('data-ascending') === 'true';
+                header.setAttribute('data-ascending', !ascending);
+                rows.sort(function(a, b) {
+                    var aText = a.children[index].textContent.trim();
+                    var bText = b.children[index].textContent.trim();
+                    if (index === 1) { // Total Sales column
+                        return ascending ? parseFloat(aText.replace(/[^0-9.-]+/g,"")) - parseFloat(bText.replace(/[^0-9.-]+/g,"")) : parseFloat(bText.replace(/[^0-9.-]+/g,"")) - parseFloat(aText.replace(/[^0-9.-]+/g,""));
+                    } else { // Date column
+                        var aParts = aText.split('/');
+                        var bParts = bText.split('/');
+                        var aDate = new Date(aParts[2], aParts[1] - 1, aParts[0]);
+                        var bDate = new Date(bParts[2], bParts[1] - 1, bParts[0]);
+                        return ascending ? aDate - bDate : bDate - aDate;
+                    }
+                });
+                rows.forEach(function(row) {
+                    tbody.appendChild(row);
+                });
+            });
+        });
+
+        // Export Buttons Functionality
+        document.querySelectorAll('.export-btn').forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                var exportFormat = this.getAttribute('data-format');
+                var params = new URLSearchParams(window.location.search);
+                window.location.href = "{{ url_for('export_sales') }}" + "?export_format=" + exportFormat + "&" + params.toString();
+            });
+        });
+
+        // Chart Type Switching for Sales Trends
+        let currentChartType = 'pie';
+        const ctxChart = document.getElementById('salesChart').getContext('2d');
+        let salesChart;
+
+        {% if sales_trends|length > 0 %}
+        const salesData = {
+            labels: {{ sales_trends | map(attribute='order_type') | list | tojson | safe }},
+            datasets: [{
+                label: 'Sales by Order Type',
+                data: {{ sales_trends | map(attribute='total_sales') | list | tojson | safe }},
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        salesChart = new Chart(ctxChart, {
+            type: currentChartType,
+            data: salesData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 20,
+                            padding: 15,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += 'Rs' + context.parsed.toFixed(2);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Chart Type Dropdown for Sales Trends
+        document.querySelectorAll('.chart-type-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                const newType = this.getAttribute('data-type');
+                const toggleButton = document.querySelector('.chart-type-toggle');
+                const colorMap = {
+                    'pie': 'btn-primary',
+                    'bar': 'btn-success',
+                    'line': 'btn-warning'
+                };
+                const textMap = {
+                    'pie': 'Pie',
+                    'bar': 'Bar',
+                    'line': 'Line'
+                };
+                if (newType !== currentChartType) {
+                    salesChart.destroy();
+                    salesChart = new Chart(ctxChart, {
+                        type: newType,
+                        data: salesData,
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 20,
+                                        padding: 15,
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed !== null) {
+                                                label += 'Rs' + context.parsed.toFixed(2);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    currentChartType = newType;
+                    // Update toggle button color and text
+                    toggleButton.className = 'btn ' + (colorMap[newType] || 'btn-secondary') + ' dropdown-toggle chart-type-toggle';
+                    toggleButton.style.backgroundColor = ''; // Remove inline styles if any
+                    toggleButton.style.border = 'none';
+                    toggleButton.style.color = '#FFFFFF';
+                    toggleButton.textContent = textMap[newType] || 'Chart Type';
+                }
+            });
+        });
+        {% endif %}
+
+        // Chart Type Switching for Sales by Category
+        let currentCategoryChartType = 'pie';
+        const ctxCategoryChart = document.getElementById('categorySalesChart').getContext('2d');
+        let categorySalesChart;
+
+        {% if category_sales|length > 0 %}
+        const categorySalesData = {
+            labels: {{ category_sales | map(attribute='category_name') | list | tojson | safe }},
+            datasets: [{
+                label: 'Sales by Category',
+                data: {{ category_sales | map(attribute='total_sales') | list | tojson | safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255,99,132,1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        categorySalesChart = new Chart(ctxCategoryChart, {
+            type: currentCategoryChartType,
+            data: categorySalesData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 20,
+                            padding: 15,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += 'Rs' + context.parsed.toFixed(2);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Chart Type Dropdown for Sales by Category
+        document.querySelectorAll('.category-chart-type-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                const newType = this.getAttribute('data-type');
+                const toggleButton = document.querySelector('.category-chart-type-toggle');
+                const colorMap = {
+                    'pie': 'btn-primary',
+                    'bar': 'btn-success',
+                    'doughnut': 'btn-danger'
+                };
+                const textMap = {
+                    'pie': 'Pie',
+                    'bar': 'Bar',
+                    'doughnut': 'Doughnut'
+                };
+                if (newType !== currentCategoryChartType) {
+                    categorySalesChart.destroy();
+                    categorySalesChart = new Chart(ctxCategoryChart, {
+                        type: newType,
+                        data: categorySalesData,
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 20,
+                                        padding: 15,
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed !== null) {
+                                                label += 'Rs' + context.parsed.toFixed(2);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    currentCategoryChartType = newType;
+                    // Update toggle button color and text
+                    toggleButton.className = 'btn ' + (colorMap[newType] || 'btn-secondary') + ' dropdown-toggle category-chart-type-toggle';
+                    toggleButton.style.backgroundColor = ''; // Remove inline styles if any
+                    toggleButton.style.border = 'none';
+                    toggleButton.style.color = '#FFFFFF';
+                    toggleButton.textContent = textMap[newType] || 'Chart Type';
+                }
+            });
+        });
+        {% endif %}
+
+        // Chart Type Switching for Top Products
+        let currentProductChartType = 'bar';
+        const ctxProductChart = document.getElementById('topProductsChart').getContext('2d');
+        let topProductsChart;
+
+        {% if top_products|length > 0 %}
+        const topProductsData = {
+            labels: {{ top_products | map(attribute='product_name') | list | tojson | safe }},
+            datasets: [{
+                label: 'Top Selling Products',
+                data: {{ top_products | map(attribute='total_sales') | list | tojson | safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(201, 203, 207, 0.7)',
+                    'rgba(255, 205, 86, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255,99,132,1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(201, 203, 207, 1)',
+                    'rgba(255, 205, 86, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        topProductsChart = new Chart(ctxProductChart, {
+            type: currentProductChartType,
+            data: topProductsData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 20,
+                            padding: 15,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += 'Rs' + context.parsed.toFixed(2);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 90,
+                            minRotation: 45
+                        },
+                        beginAtZero: true
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Chart Type Dropdown for Top Products
+        document.querySelectorAll('.product-chart-type-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                const newType = this.getAttribute('data-type');
+                const toggleButton = document.querySelector('.product-chart-type-toggle');
+                const colorMap = {
+                    'bar': 'btn-success',
+                    'horizontalBar': 'btn-info',
+                    'pie': 'btn-warning'
+                };
+                const textMap = {
+                    'bar': 'Bar',
+                    'horizontalBar': 'Horizontal Bar',
+                    'pie': 'Pie'
+                };
+                if (newType !== currentProductChartType) {
+                    topProductsChart.destroy();
+                    topProductsChart = new Chart(ctxProductChart, {
+                        type: newType === 'horizontalBar' ? 'bar' : newType,
+                        data: topProductsData,
+                        options: {
+                            indexAxis: newType === 'horizontalBar' ? 'y' : 'x',
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 20,
+                                        padding: 15,
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed !== null) {
+                                                label += 'Rs' + context.parsed.toFixed(2);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true
+                                },
+                                y: {
+                                    ticks: {
+                                        autoSkip: false,
+                                        maxRotation: 90,
+                                        minRotation: 45
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    currentProductChartType = newType;
+                    // Update toggle button color and text
+                    toggleButton.className = 'btn ' + (colorMap[newType] || 'btn-secondary') + ' dropdown-toggle product-chart-type-toggle';
+                    toggleButton.style.backgroundColor = ''; // Remove inline styles if any
+                    toggleButton.style.border = 'none';
+                    toggleButton.style.color = '#FFFFFF';
+                    toggleButton.textContent = textMap[newType] || 'Chart Type';
+                }
+            });
+        });
+        {% endif %}
+    </script>
+{% endblock %}
+

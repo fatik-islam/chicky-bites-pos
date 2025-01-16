@@ -1,64 +1,385 @@
+<!-- templates/products.html -->
+
 {% extends "base.html" %}
 {% block content %}
-<h3>Manage Products</h3>
+<div class="container my-5">
+    <h2 class="text-center mb-5" style="color: #424242; position: relative; display: inline-block;">
+        Manage Products
+        <span style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 80px; height: 3px; background: #1976D2;"></span>
+    </h2>
 
-<form method="POST">
-  {{ form.hidden_tag() }}
-  <div class="mb-3">
-    {{ form.name.label(class_='form-label') }}
-    {{ form.name(class_='form-control') }}
-  </div>
-  <div class="mb-3">
-    {{ form.price.label(class_='form-label') }}
-    {{ form.price(class_='form-control') }}
-  </div>
-  <div class="mb-3">
-    {{ form.stock.label(class_='form-label') }}
-    {{ form.stock(class_='form-control') }}
-  </div>
-  <div class="mb-3">
-    {{ form.category_id.label(class_='form-label') }}
-    {{ form.category_id(class_='form-select') }}
-  </div>
-  <div class="text-end">
-    {{ form.submit(class_='btn btn-success') }}
-  </div>
-</form>
+    <!-- Add Main Product Form -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-header" style="background: linear-gradient(to right, #1976D2, #1565C0); color: #FFFFFF;">
+            <h5 class="mb-0">Add New Main Product</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('products') }}" class="needs-validation" novalidate id="addProductForm">
+                {{ form_main.hidden_tag() }}
+                <input type="hidden" name="add_main_product" value="1">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form_main.name.label(class_='form-label') }}
+                        {{ form_main.name(class_='form-control', placeholder='Enter main product name', required=True) }}
+                        {% for error in form_main.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please provide a valid main product name.
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form_main.category_id.label(class_='form-label') }}
+                        {{ form_main.category_id(class_='form-select', required=True) }}
+                        {% for error in form_main.category_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please select a category for the main product.
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form_main.price.label(class_='form-label') }}
+                        {{ form_main.price(class_='form-control', placeholder='Enter price (Rs)', required=True, min=0.01, step='any') }}
+                        {% for error in form_main.price.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please provide a valid price (greater than or equal to 0).
+                        </div>
+                    </div>
+                </div>
 
-<hr />
+                <!-- Associate Sub-Products Section -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header" style="background-color: #f5f5f5;">
+                        <h5 class="mb-0">Associate Sub-Products</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="main-subproducts-container">
+                            <!-- Dynamic sub-products will be added here -->
+                            {% for component in form_main.components %}
+                                <div class="row mb-3 component-item">
+                                    <div class="col-md-6">
+                                        {{ component.sub_product_id.label(class_='form-label') }}
+                                        {{ component.sub_product_id(class_='form-select', required=True) }}
+                                        {% for error in component.sub_product_id.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ error }}
+                                            </div>
+                                        {% endfor %}
+                                        <div class="invalid-feedback">
+                                            Please select a sub-product.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ component.quantity.label(class_='form-label') }}
+                                        {{ component.quantity(class_='form-control', placeholder='Quantity', required=True, min='1', step='1') }}
+                                        {% for error in component.quantity.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ error }}
+                                            </div>
+                                        {% endfor %}
+                                        <div class="invalid-feedback">
+                                            Please provide a valid quantity (at least 1).
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger remove-main-subproduct-btn" title="Remove Sub-Product">
+                                            <i class="bi bi-dash-circle-fill"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-secondary" id="add-main-subproduct-btn">
+                            <i class="bi bi-plus-circle-fill me-2"></i>Add Sub-Product
+                        </button>
+                    </div>
+                </div>
+                <!-- End of Associate Sub-Products Section -->
 
-<h4>Existing Products</h4>
-<table class="table table-bordered">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Price</th>
-      <th>Stock</th>
-      <th>Category</th>
-      <th>Update Stock</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for product in products %}
-    <tr>
-      <td>{{ product.name }}</td>
-      <td>{{ product.price }}</td>
-      <td>{{ product.stock }}</td>
-      <td>{{ product.category.name if product.category else 'No Category' }}</td>
-      <td>
-        <form action="{{ url_for('update_stock', product_id=product.id) }}" method="POST" class="d-inline">
-          <input type="number" name="stock" value="{{ product.stock }}" class="form-control d-inline-block" style="width:70px;">
-          <button type="submit" class="btn btn-primary btn-sm">Update</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-    {% if products|length == 0 %}
-    <tr>
-      <td colspan="5">No products found.</td>
-    </tr>
-    {% endif %}
-  </tbody>
-</table>
+                <div class="text-end">
+                    {{ form_main.submit(class_='btn btn-success') }}
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- End of Add Main Product Form -->
+
+    <!-- Add Sub-Product Form -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-header" style="background: linear-gradient(to right, #388E3C, #43A047); color: #FFFFFF;">
+            <h5 class="mb-0">Add New Sub-Product</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('products') }}" class="needs-validation" novalidate id="addSubProductForm">
+                {{ form_sub.hidden_tag() }}
+                <input type="hidden" name="add_sub_product" value="1">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form_sub.name.label(class_='form-label') }}
+                        {{ form_sub.name(class_='form-control', placeholder='Enter sub-product name', required=True) }}
+                        {% for error in form_sub.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please provide a valid sub-product name.
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form_sub.stock.label(class_='form-label') }}
+                        {{ form_sub.stock(class_='form-control', placeholder='Enter stock quantity', required=True, min=0, step='1') }}
+                        {% for error in form_sub.stock.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        <div class="invalid-feedback">
+                            Please provide a valid stock quantity (non-negative integer).
+                        </div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    {{ form_sub.submit(class_='btn btn-success') }}
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- End of Add Sub-Product Form -->
+
+    <!-- Existing Products Table -->
+    <div class="card shadow-sm">
+        <div class="card-header" style="background: linear-gradient(to right, #1976D2, #1565C0); color: #FFFFFF;">
+            <h5 class="mb-0">Existing Products</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" style="border-radius: 12px; overflow: hidden;">
+                    <thead class="table-light" style="background: linear-gradient(to right, #1976D2, #1565C0); color: #FFFFFF;">
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col" class="text-end">Price (Rs)</th>
+                            <th scope="col" class="text-center">Stock</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Is Sub-Product</th>
+                            <th scope="col">Components</th>
+                            <th scope="col" style="width: 250px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td style="color: #424242;">{{ product.name }}</td>
+                            <td class="text-end" style="color: #424242;">
+                                {% if not product.is_sub_product %}
+                                    Rs {{ '{:.2f}'.format(product.price) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td class="text-center" style="color: #424242;">
+                                {% if product.is_sub_product %}
+                                    {{ product.stock }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td style="color: #424242;">{{ product.category.name if product.category else 'No Category' }}</td>
+                            <td style="color: #424242;">
+                                {% if product.is_sub_product %}
+                                    <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="color: #424242;">
+                                {% if product.component_associations|length > 0 %}
+                                    <ul class="list-unstyled mb-0">
+                                        {% for association in product.component_associations %}
+                                            <li>{{ association.sub_product.name }} (Qty: {{ association.quantity }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">No Components</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not product.is_sub_product %}
+                                    <!-- Edit Main Product Button: Opens Edit Modal -->
+                                    <button 
+                                        class="btn btn-secondary btn-sm me-2 edit-main-product-btn" 
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editProductModal"
+                                        data-product-id="{{ product.id }}" 
+                                        data-product-name="{{ product.name }}"
+                                        data-product-price="{{ product.price }}"
+                                        data-product-category="{{ product.category_id }}"
+                                        data-is-sub-product="{{ product.is_sub_product }}"
+                                        title="Edit Main Product"
+                                    >
+                                        <i class="bi bi-pencil-fill"></i> Edit
+                                    </button>
+                                    <!-- Delete Main Product Button: Form with CSRF Token -->
+                                    <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Are you sure you want to delete this main product?');"
+                                            title="Delete Main Product"
+                                        >
+                                            <i class="bi bi-trash-fill"></i> Delete
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <!-- Edit Sub-Product Button: Opens Edit Modal -->
+                                    <button 
+                                        class="btn btn-secondary btn-sm me-2 edit-sub-product-btn" 
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editProductModal"
+                                        data-product-id="{{ product.id }}" 
+                                        data-product-name="{{ product.name }}"
+                                        data-product-stock="{{ product.stock }}"
+                                        data-is-sub-product="{{ product.is_sub_product }}"
+                                        title="Edit Sub-Product"
+                                    >
+                                        <i class="bi bi-pencil-fill"></i> Edit
+                                    </button>
+                                    <!-- Remove Update Stock Button -->
+                                    <!-- <button 
+                                        class="btn btn-primary btn-sm me-2 update-stock-btn" 
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#updateStockModal"
+                                        data-product-id="{{ product.id }}" 
+                                        data-current-stock="{{ product.stock }}"
+                                        data-product-name="{{ product.name }}"
+                                        title="Update Stock"
+                                    >
+                                        <i class="bi bi-pencil-square"></i> Update Stock
+                                    </button> -->
+                                    <!-- Delete Sub-Product Button: Form with CSRF Token -->
+                                    <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Are you sure you want to delete this sub-product?');"
+                                            title="Delete Sub-Product"
+                                        >
+                                            <i class="bi bi-trash-fill"></i> Delete
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if products|length == 0 %}
+                        <tr>
+                            <td colspan="7" class="text-center" style="color: #616161;">
+                                <i class="bi bi-info-circle-fill fs-3"></i>
+                                <p class="mt-2">No products found.</p>
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm" style="background-color: #1976D2; border: none;">
+                                    <i class="bi bi-house-door-fill me-1"></i> View All Sales
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 12px;">
+                <div class="modal-header" style="background-color: #1976D2; color: white;">
+                    <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="color: #424242;">
+                    <form id="editProductForm" method="POST" action="#" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="product_id" id="editModalProductId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editProductName" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="editProductName" name="name" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid product name.
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3" id="editPriceStockContainer">
+                                <!-- Price and Stock fields will be dynamically shown based on product type -->
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editProductCategory" class="form-label">Category</label>
+                                <select class="form-select" id="editProductCategory" name="category_id" required>
+                                    <option value="">Select Category</option>
+                                    {% for category in form_main.category_id.choices %}
+                                        <option value="{{ category[0] }}">{{ category[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a category for the product.
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <!-- Checkbox for is_sub_product -->
+                                    <input type="checkbox" class="form-check-input" id="editIsSubProduct" name="is_sub_product">
+                                    <label class="form-check-label" for="editIsSubProduct">Is Sub-Product</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Components Section (only for main products) -->
+                        <div class="card shadow-sm mb-4" id="edit-components-section" style="display: none;">
+                            <div class="card-header" style="background-color: #f5f5f5;">
+                                <h5 class="mb-0">Product Components</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="edit-components-container">
+                                    <!-- Existing components will be loaded here via JavaScript -->
+                                </div>
+                                <button type="button" class="btn btn-secondary" id="edit-add-component-btn">
+                                    <i class="bi bi-plus-circle-fill me-2"></i>Add Sub-Product
+                                </button>
+                            </div>
+                        </div>
+                        <!-- End of Product Components Section -->
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f9fa;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embed Sub-Product Choices into JavaScript -->
+    <script>
+        var subProductChoices = {{ sub_product_choices | tojson }};
+    </script>
+
+    <!-- Client-Side Validation and Modal Population Script -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</div>
 {% endblock %}
 

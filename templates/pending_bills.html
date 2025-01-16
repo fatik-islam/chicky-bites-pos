@@ -1,0 +1,216 @@
+<!-- templates/pending_bills.html -->
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-5" style="color: #424242; position: relative; display: inline-block;">
+        Pending Bills
+        <span style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; background: #1976D2;"></span>
+    </h2>
+
+    <div class="table-responsive">
+        <table class="table table-hover shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <thead class="table-light" style="background: linear-gradient(to right, #512DA8, #3F51B5); color: #FFFFFF;">
+                <tr>
+                    <th scope="col">Order ID</th>
+                    <th scope="col">Order Type</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Total Amount (Rs)</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td style="color: #424242;">{{ order.id }}</td>
+                    <td style="color: #424242;">{{ order.order_type }}</td>
+                    <td style="color: #424242;">{{ order.date_ordered.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td style="color: #424242;">Rs{{ '{:.2f}'.format(order.total_amount) }}</td>
+                    <td>
+                        <!-- View Button: Opens Modal -->
+                        <button
+                            class="btn btn-primary btn-sm me-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#orderDetailsModal"
+                            data-order-id="{{ order.id }}"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="View Order Details"
+                        >
+                            <i class="bi bi-eye"></i> View
+                        </button>
+
+                        <!-- Print Receipt Button: Opens print_order route in new tab -->
+                        <a 
+                            href="{{ url_for('print_order', order_id=order.id) }}" 
+                            target="_blank" 
+                            class="btn btn-secondary btn-sm me-2" 
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Print Receipt"
+                        >
+                            <i class="bi bi-printer-fill"></i> Print Receipt
+                        </a>
+
+                        <!-- Complete Button: Sends AJAX POST Request -->
+                        <button
+                            class="btn btn-success btn-sm me-2 completeOrderBtn"
+                            data-order-id="{{ order.id }}"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Mark as Completed"
+                        >
+                            <i class="bi bi-check-circle"></i> Complete
+                        </button>
+
+                        <!-- Cancel Button: Form with CSRF Token -->
+                        <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="POST" class="d-inline">
+                            {{ csrf_field() }}
+                            <button
+                                type="submit"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('Are you sure you want to cancel this order?');"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Cancel Order"
+                            >
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if orders|length == 0 %}
+                <tr>
+                    <td colspan="5" class="text-center" style="color: #616161;">
+                        <i class="bi bi-info-circle-fill fs-3"></i>
+                        <p class="mt-2">No pending bills found.</p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm" style="background-color: #1976D2; border: none;">
+                            <i class="bi bi-house-door-fill me-1"></i> View All Sales
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div
+        class="modal fade"
+        id="orderDetailsModal"
+        tabindex="-1"
+        aria-labelledby="orderDetailsModalLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 12px;">
+                <div class="modal-header" style="background-color: #283593; color: #FFFFFF;">
+                    <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="color: #424242;">
+                    <!-- Order details will be dynamically loaded here -->
+                    <div id="orderDetailsContent">
+                        <p class="text-center">Loading...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                        style="background-color: #F5F5F5; color: #424242;"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSRF Token for AJAX Requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+            // Retrieve CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // Initialize Bootstrap Modal
+            const orderDetailsModal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+
+            // Handle 'View' Button Clicks to Load Order Details
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const orderId = this.getAttribute('data-order-id');
+                    const modalTitle = document.getElementById('orderDetailsModalLabel');
+                    const orderDetailsContent = document.getElementById('orderDetailsContent');
+
+                    // Set Modal Title
+                    modalTitle.textContent = `Order Details - #${orderId}`;
+
+                    // Fetch Order Details via AJAX
+                    fetch(`/order_details/${orderId}`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(data => {
+                        orderDetailsContent.innerHTML = data;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching order details:', error);
+                        orderDetailsContent.innerHTML = '<p class="text-danger">Failed to load order details.</p>';
+                    });
+                });
+            });
+
+            // Handle 'Complete' Button Clicks to Mark Orders as Completed
+            document.querySelectorAll('.completeOrderBtn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const orderId = this.getAttribute('data-order-id');
+
+                    if (confirm('Are you sure you want to mark this order as completed?')) {
+                        fetch(`/complete_order/${orderId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: JSON.stringify({}),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Reload the page to reflect changes
+                                location.reload();
+                            } else {
+                                alert(data.message || 'Error completing the order.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error completing order:', error);
+                            alert('An error occurred while completing the order.');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</div>
+{% endblock %}
+

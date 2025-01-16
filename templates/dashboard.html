@@ -1,30 +1,661 @@
+<!-- templates/dashboard.html -->
 {% extends "base.html" %}
+
+{% block head %}
+    <!-- Animate.css for Animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Custom Styles Specific to Dashboard -->
+    <style>
+        /* Session Information Section */
+        .metric-title {
+            font-size: 1.2rem;
+            color: #424242;
+        }
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #283593;
+        }
+        /* Circular Progress Bars */
+        .progress-circle {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        .progress-circle canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .progress-circle .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            color: #424242;
+        }
+        /* Session Summary Table */
+        .table-icon {
+            margin-right: 8px;
+        }
+        /* Color-coded rows */
+        .table-dinein {
+            background-color: #e8f5e9; /* Light Green */
+        }
+        .table-takeaway {
+            background-color: #fff3e0; /* Light Orange */
+        }
+        .table-delivery {
+            background-color: #e3f2fd; /* Light Blue */
+        }
+        /* Whitespace Optimization */
+        .section {
+            margin-bottom: 40px;
+        }
+        /* Tooltip Overrides */
+        .tooltip-inner {
+            background-color: #1976D2;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        /* Start/End Session Button Styles */
+        .session-button {
+            transition: all 0.3s ease;
+        }
+        .session-active-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: #43A047; /* Green */
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
-<h1>Welcome to Chicky Bites POS Dashboard</h1>
+<div class="container my-5">
+    <!-- Dashboard Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div class="text-center position-relative">
+            <h2 style="color: #424242; font-weight: 700; display: inline-block;">
+                Chicky Bites POS Dashboard
+                <span style="display: block; width: 60px; height: 3px; background: #1976D2; margin: 10px auto;"></span>
+            </h2>
+        </div>
+        <div>
+            <!-- Button to Customize Dashboard -->
+            <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#customizeDashboardModal" title="Customize Dashboard">
+                <i class="bi bi-gear-fill"></i> Customize
+            </button>
 
-<div class="row">
-  <div class="col-md-6">
-    <div class="card mb-3">
-      <div class="card-body">
-        <h4>Total Orders: {{ total_orders }}</h4>
-        <h4>Total Revenue: ${{ '{:.2f}'.format(total_revenue) }}</h4>
-      </div>
+            {% if not session_active %}
+            <!-- Start Session Form -->
+            <form action="{{ url_for('start_session') }}" method="POST" class="d-inline">
+                {{ start_session_form.hidden_tag() }}
+                <button type="submit" class="btn btn-primary session-button" data-bs-toggle="tooltip" title="Start a new session">
+                    <i class="bi bi-play-circle"></i> Start Session
+                </button>
+            </form>
+            {% else %}
+            <!-- End Session Button -->
+            <button type="button" class="btn btn-danger me-3 session-button" data-bs-toggle="modal" data-bs-target="#confirmEndSession" title="End the current session">
+                <i class="bi bi-stop-circle"></i> End Session
+            </button>
+            <span class="me-3">
+                <strong>Session Timer:</strong>
+                <span id="sessionTimer" style="color:#424242;">00:00:00</span>
+            </span>
+            <span class="me-3">
+                <strong>Session Orders:</strong>
+                {{ session_orders }}
+            </span>
+            <span>
+                <strong>Session Revenue (Rs):</strong>
+                {{ '{:.2f}'.format(session_revenue) }}
+            </span>
+            {% endif %}
+        </div>
     </div>
-  </div>
 
-  <div class="col-md-6">
-    <h5>Recent Orders</h5>
-    <ul class="list-group">
-      {% for order in recent_orders %}
-      <li class="list-group-item">
-        Order #{{ order.id }} - {{ order.date_ordered }} - ${{ '{:.2f}'.format(order.total_amount) }}
-      </li>
-      {% endfor %}
-      {% if recent_orders|length == 0 %}
-      <li class="list-group-item">No recent orders</li>
-      {% endif %}
-    </ul>
-  </div>
+    <!-- Confirmation Modal for Ending Session -->
+    <div class="modal fade" id="confirmEndSession" tabindex="-1" aria-labelledby="confirmEndSessionLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm End Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to end the current session? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('end_session') }}" method="POST" class="d-inline">
+                        {{ end_session_form.hidden_tag() }}
+                        <button type="submit" class="btn btn-danger">End Session</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customize Dashboard Modal -->
+    <div class="modal fade" id="customizeDashboardModal" tabindex="-1" aria-labelledby="customizeDashboardModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Customize Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customizeDashboardForm">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="toggleSessionInfo" checked>
+                            <label class="form-check-label" for="toggleSessionInfo">
+                                Show Session Information
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="toggleSessionSummary" checked>
+                            <label class="form-check-label" for="toggleSessionSummary">
+                                Show Session Summary
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="toggleSalesTrends" checked>
+                            <label class="form-check-label" for="toggleSalesTrends">
+                                Show Sales Trends
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="toggleOrderSummary" checked>
+                            <label class="form-check-label" for="toggleOrderSummary">
+                                Show Order Summary
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if session_active %}
+    <!-- Session Information Section -->
+    <div class="row section" id="sessionInfoSection">
+        <!-- Session Orders -->
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow-sm" style="border-radius: 12px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #43A047; font-weight: 600;">Session Orders</h5>
+                    <div class="metric-value" style="color: #424242;">{{ session_orders }}</div>
+                    <div class="progress-circle mx-auto" style="height: 80px; width: 80px;">
+                        <canvas id="ordersProgress"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Session Revenue -->
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow-sm" style="border-radius: 12px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #43A047; font-weight: 600;">Session Revenue</h5>
+                    <div class="metric-value" style="color: #424242;">Rs {{ '{:.2f}'.format(session_revenue) }}</div>
+                    <div class="progress-circle mx-auto" style="height: 80px; width: 80px;">
+                        <canvas id="revenueProgress"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Pending Orders -->
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow-sm" style="border-radius: 12px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #E53935; font-weight: 600;">Pending Orders</h5>
+                    <div class="metric-value" style="color: #424242;">{{ pending_orders }}</div>
+                    <div class="progress-circle mx-auto" style="height: 80px; width: 80px;">
+                        <canvas id="pendingOrdersProgress"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Summary Table with Filters -->
+    <div class="row section" id="sessionSummarySection">
+        <div class="col-12">
+            <h4 class="mb-3" style="color: #283593; font-weight: 600;">Session Summary</h4>
+            <div class="mb-3">
+                <button class="btn btn-sm btn-outline-primary me-2 filter-btn" data-filter="all" data-bs-toggle="tooltip" title="Show All Order Types">
+                    <i class="bi bi-eye-fill"></i> All
+                </button>
+                <button class="btn btn-sm btn-outline-primary me-2 filter-btn" data-filter="table-dinein" data-bs-toggle="tooltip" title="Toggle Dine-in Orders">
+                    <i class="bi bi-plate-fill"></i> Dine-in
+                </button>
+                <button class="btn btn-sm btn-outline-primary me-2 filter-btn" data-filter="table-takeaway" data-bs-toggle="tooltip" title="Toggle Takeaway Orders">
+                    <i class="bi bi-box-seam-fill"></i> Takeaway
+                </button>
+                <button class="btn btn-sm btn-outline-primary filter-btn" data-filter="table-delivery" data-bs-toggle="tooltip" title="Toggle Delivery Orders">
+                    <i class="bi bi-truck"></i> Delivery
+                </button>
+            </div>
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Order Type</th>
+                        <th scope="col">Number of Orders</th>
+                        <th scope="col">Total Revenue (Rs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="table-dinein">
+                        <td><i class="bi bi-plate-fill table-icon" data-bs-toggle="tooltip" title="Dine-in Orders"></i>Dine-in</td>
+                        <td>{{ dine_in_orders }}</td>
+                        <td>Rs {{ '{:.2f}'.format(dine_in_revenue) }}</td>
+                    </tr>
+                    <tr class="table-takeaway">
+                        <td><i class="bi bi-box-seam-fill table-icon" data-bs-toggle="tooltip" title="Takeaway Orders"></i>Takeaway</td>
+                        <td>{{ takeaway_orders }}</td>
+                        <td>Rs {{ '{:.2f}'.format(takeaway_revenue) }}</td>
+                    </tr>
+                    <tr class="table-delivery">
+                        <td><i class="bi bi-truck table-icon" data-bs-toggle="tooltip" title="Delivery Orders"></i>Delivery</td>
+                        <td>{{ delivery_orders }}</td>
+                        <td>Rs {{ '{:.2f}'.format(delivery_revenue) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Session Sales Trends -->
+    <div class="row section" id="salesTrendsSection">
+        <div class="col-12">
+            <h4 class="mb-3" style="color: #283593; font-weight: 600;">Session Sales Trends</h4>
+            <div class="card shadow-sm" style="border-radius: 12px; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#salesTrendsModal">
+                <div class="card-body">
+                    <canvas id="salesTrendsChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="row section" id="orderSummarySection">
+        <div class="col-12">
+            <h4 class="mb-3" style="color: #283593; font-weight: 600;">Order Summary</h4>
+            {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Order ID</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Table Number</th>
+                            <th scope="col">Address</th>
+                            <th scope="col">Contact</th>
+                            <th scope="col">Total Amount (Rs)</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Date Ordered</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        {# Build classes based on order types #}
+                        {% set row_classes = [] %}
+                        {% for ot in order.order_types %}
+                            {% if ot.name == 'Dine-in' %}
+                                {% set row_classes = row_classes + ['table-dinein'] %}
+                            {% elif ot.name == 'Takeaway' %}
+                                {% set row_classes = row_classes + ['table-takeaway'] %}
+                            {% elif ot.name == 'Delivery' %}
+                                {% set row_classes = row_classes + ['table-delivery'] %}
+                            {% endif %}
+                        {% endfor %}
+                        <tr class="{{ ' '.join(row_classes) }}">
+                            <td>{{ order.id }}</td>
+                            <td>
+                                {% for ot in order.order_types %}
+                                    <span class="badge bg-info text-dark me-1">{{ ot.name }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ order.table.table_number if order.table else '-' }}</td>
+                            <td>{{ order.address if order.address else '-' }}</td>
+                            <td>{{ order.contact_number if order.contact_number else '-' }}</td>
+                            <td>Rs {{ '{:.2f}'.format(order.total_amount) }}</td>
+                            <td>
+                                {% if order.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Order is pending">Pending</span>
+                                {% elif order.status == 'Completed' %}
+                                    <span class="badge bg-success" data-bs-toggle="tooltip" title="Order is completed">Completed</span>
+                                {% elif order.status == 'Cancelled' %}
+                                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Order is cancelled">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Order status unknown">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.date_ordered.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <!-- View Details -->
+                                <a href="{{ url_for('order_details', order_id=order.id) }}" class="btn btn-sm btn-primary me-1" data-bs-toggle="tooltip" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <!-- Print Order -->
+                                <a href="{{ url_for('print_order', order_id=order.id) }}" class="btn btn-sm btn-secondary me-1" data-bs-toggle="tooltip" title="Print Order">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                                {% if order.status == 'Pending' %}
+                                    <!-- Complete Order -->
+                                    <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                        {{ csrf_token() }}
+                                        <button type="submit" class="btn btn-sm btn-success me-1" data-bs-toggle="tooltip" title="Mark as Completed">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Cancel Order -->
+                                    <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                        {{ csrf_token() }}
+                                        <button type="submit" class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Cancel Order">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="bi bi-emoji-smile-fill me-2" style="font-size: 2rem;"></i>
+                    No orders yet! Start a session to begin tracking your orders.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Detailed Sales Trends Modal -->
+<div class="modal fade" id="salesTrendsModal" tabindex="-1" aria-labelledby="salesTrendsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detailed Sales Trends</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <canvas id="detailedSalesTrendsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js (Already Included in base.html) -->
+
+<script>
+(function() {
+    // Session Timer Initialization
+    const sessionActive = {{ 'true' if session_active else 'false' }};
+    const sessionStartTs = {{ session_start_timestamp|default(0) }};
+    
+    if (sessionActive && sessionStartTs > 0) {
+        const timerElem = document.getElementById('sessionTimer');
+        if (timerElem) {
+            const startMs = parseFloat(sessionStartTs) * 1000; // Convert to ms
+            function updateTimer() {
+                const nowMs = Date.now();
+                let diffMs = nowMs - startMs;
+                if (diffMs < 0) diffMs = 0;
+                const totalSec = Math.floor(diffMs / 1000);
+                const hours = Math.floor(totalSec / 3600);
+                const minutes = Math.floor((totalSec % 3600) / 60);
+                const seconds = totalSec % 60;
+                timerElem.textContent =
+                    String(hours).padStart(2, '0') + ':' +
+                    String(minutes).padStart(2, '0') + ':' +
+                    String(seconds).padStart(2, '0');
+            }
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+    }
+})();
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize Circular Progress Bars using Chart.js
+    // Session Orders Progress
+    const ordersCtx = document.getElementById('ordersProgress').getContext('2d');
+    const ordersProgress = new Chart(ordersCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Orders', 'Remaining'],
+            datasets: [{
+                data: [
+                    {{ session_orders }},
+                    {{ 100 - session_orders if session_orders < 100 else 0 }}
+                ],
+                backgroundColor: ['#1976D2', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+
+    // Session Revenue Progress
+    const revenueCtx = document.getElementById('revenueProgress').getContext('2d');
+    const revenueProgress = new Chart(revenueCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Revenue', 'Remaining'],
+            datasets: [{
+                data: [
+                    {{ session_revenue }},
+                    {{ 100000 - session_revenue if session_revenue < 100000 else 0 }}
+                ],
+                backgroundColor: ['#43A047', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+
+    // Pending Orders Progress
+    const pendingCtx = document.getElementById('pendingOrdersProgress').getContext('2d');
+    const pendingProgress = new Chart(pendingCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending', 'Resolved'],
+            datasets: [{
+                data: [
+                    {{ pending_orders }},
+                    {{ 100 - pending_orders if pending_orders < 100 else 0 }}
+                ],
+                backgroundColor: ['#E53935', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+
+    // Session Sales Trends Chart
+    const salesTrendsCtx = document.getElementById('salesTrendsChart').getContext('2d');
+    const salesTrendsChart = new Chart(salesTrendsCtx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for trend in sales_trends %}
+                '{{ trend.date.strftime('%Y-%m-%d') }}'
+                {% if not loop.last %}, {% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Sales (Rs)',
+                data: [
+                    {% for trend in sales_trends %}
+                    {{ trend.total_sales }}
+                    {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                borderColor: 'rgba(25, 118, 210, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
+            scales: {
+                x: { display: true, title: { display: true, text: 'Date' } },
+                y: { display: true, title: { display: true, text: 'Sales (Rs)' }, beginAtZero: true }
+            }
+        }
+    });
+
+    // Detailed Sales Trends Chart in Modal
+    const detailedSalesCtx = document.getElementById('detailedSalesTrendsChart').getContext('2d');
+    const detailedSalesTrendsChart = new Chart(detailedSalesCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for trend in sales_trends %}
+                '{{ trend.date.strftime('%Y-%m-%d') }}'
+                {% if not loop.last %}, {% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Sales (Rs)',
+                data: [
+                    {% for trend in sales_trends %}
+                    {{ trend.total_sales }}
+                    {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(25, 118, 210, 0.6)',
+                borderColor: 'rgba(25, 118, 210, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                x: { display: true, title: { display: true, text: 'Date' } },
+                y: { display: true, title: { display: true, text: 'Sales (Rs)' }, beginAtZero: true }
+            }
+        }
+    });
+
+    // Session Summary Filters
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            const rows = document.querySelectorAll('tbody tr');
+            if (filter === 'all') {
+                rows.forEach(row => {
+                    row.style.display = '';
+                });
+            } else {
+                rows.forEach(row => {
+                    if (row.classList.contains(filter)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+
+    // Customize Dashboard Section Toggles
+    const customizeForm = document.getElementById('customizeDashboardForm');
+    const sessionInfoSection = document.getElementById('sessionInfoSection');
+    const sessionSummarySection = document.getElementById('sessionSummarySection');
+    const salesTrendsSection = document.getElementById('salesTrendsSection');
+    const orderSummarySection = document.getElementById('orderSummarySection');
+
+    // Restore user preferences from localStorage
+    if (localStorage.getItem('dashboardPreferences')) {
+        const preferences = JSON.parse(localStorage.getItem('dashboardPreferences'));
+        document.getElementById('toggleSessionInfo').checked = preferences.sessionInfo;
+        document.getElementById('toggleSessionSummary').checked = preferences.sessionSummary;
+        document.getElementById('toggleSalesTrends').checked = preferences.salesTrends;
+        document.getElementById('toggleOrderSummary').checked = preferences.orderSummary;
+
+        sessionInfoSection.style.display = preferences.sessionInfo ? '' : 'none';
+        sessionSummarySection.style.display = preferences.sessionSummary ? '' : 'none';
+        salesTrendsSection.style.display = preferences.salesTrends ? '' : 'none';
+        orderSummarySection.style.display = preferences.orderSummary ? '' : 'none';
+    }
+
+    // Listen for changes in customization form
+    customizeForm.addEventListener('change', function() {
+        const preferences = {
+            sessionInfo: document.getElementById('toggleSessionInfo').checked,
+            sessionSummary: document.getElementById('toggleSessionSummary').checked,
+            salesTrends: document.getElementById('toggleSalesTrends').checked,
+            orderSummary: document.getElementById('toggleOrderSummary').checked
+        };
+
+        sessionInfoSection.style.display = preferences.sessionInfo ? '' : 'none';
+        sessionSummarySection.style.display = preferences.sessionSummary ? '' : 'none';
+        salesTrendsSection.style.display = preferences.salesTrends ? '' : 'none';
+        orderSummarySection.style.display = preferences.orderSummary ? '' : 'none';
+
+        // Save preferences to localStorage
+        localStorage.setItem('dashboardPreferences', JSON.stringify(preferences));
+    });
+});
+</script>
 {% endblock %}
 

@@ -1,0 +1,202 @@
+<!-- templates/register.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <!-- Registration Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm" style="border: none; border-radius: 15px; background-color: #F5F5F5;">
+                <div class="card-header text-white d-flex justify-content-center align-items-center" style="background: linear-gradient(to right, #1976D2, #512DA8); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h2 class="mb-0" style="font-weight: bold;">Register New User</h2>
+                </div>
+                <div class="card-body p-5">
+                    <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Username Field -->
+                        <div class="mb-4">
+                            {{ form.username.label(class="form-label fw-bold text-secondary") }}
+                            {{ form.username(class="form-control form-control-lg", placeholder="Enter username", required=True, autofocus=True, id="registerUsername") }}
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Password Field with Show Password Toggle -->
+                        <div class="mb-4">
+                            {{ form.password.label(class="form-label fw-bold text-secondary") }}
+                            <div class="input-group">
+                                {{ form.password(class="form-control form-control-lg", placeholder="Enter password", required=True, id="registerPassword") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleRegisterPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% for error in form.password.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Confirm Password Field with Show Password Toggle -->
+                        <div class="mb-4">
+                            {{ form.confirm_password.label(class="form-label fw-bold text-secondary") }}
+                            <div class="input-group">
+                                {{ form.confirm_password(class="form-control form-control-lg", placeholder="Confirm password", required=True, id="confirmRegisterPassword") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleConfirmRegisterPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% for error in form.confirm_password.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Role Selection Field -->
+                        <div class="mb-4">
+                            {{ form.role.label(class="form-label fw-bold text-secondary") }}
+                            {{ form.role(class="form-select form-select-lg", required=True, id="userRole") }}
+                            {% for error in form.role.errors %}
+                                <div class="invalid-feedback">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Submit Button for Registration -->
+                        <div class="d-grid mb-4">
+                            {{ form.submit(class="btn btn-primary btn-lg shadow-sm", value="Register", style="background: linear-gradient(to right, #1976D2, #512DA8); border: none;") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="col-md-6">
+            <div class="card shadow-sm" style="border: none; border-radius: 15px; background-color: #F5F5F5;">
+                <div class="card-header text-white d-flex justify-content-center align-items-center" style="background: linear-gradient(to right, #1976D2, #512DA8); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h2 class="mb-0" style="font-weight: bold;">Change Password</h2>
+                </div>
+                <div class="card-body p-5">
+                    <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+                        {{ change_form.hidden_tag() }}
+                        
+                        <!-- Current Password Field with Show Password Toggle -->
+                        <div class="mb-4">
+                            {{ change_form.current_password.label(class="form-label fw-bold text-secondary") }}
+                            <div class="input-group">
+                                {{ change_form.current_password(class="form-control form-control-lg", placeholder="Enter current password", required=True, id="currentPassword") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleCurrentPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% for error in change_form.current_password.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- New Password Field with Show Password Toggle -->
+                        <div class="mb-4">
+                            {{ change_form.new_password.label(class="form-label fw-bold text-secondary") }}
+                            <div class="input-group">
+                                {{ change_form.new_password(class="form-control form-control-lg", placeholder="Enter new password", required=True, id="newPassword") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% for error in change_form.new_password.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Confirm New Password Field with Show Password Toggle -->
+                        <div class="mb-4">
+                            {{ change_form.confirm_new_password.label(class="form-label fw-bold text-secondary") }}
+                            <div class="input-group">
+                                {{ change_form.confirm_new_password(class="form-control form-control-lg", placeholder="Confirm new password", required=True, id="confirmNewPassword") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleConfirmNewPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% for error in change_form.confirm_new_password.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button for Change Password -->
+                        <div class="d-grid">
+                            {{ change_form.submit(class="btn btn-warning btn-lg shadow-sm", value="Change Password", style="background: linear-gradient(to right, #1976D2, #512DA8); border: none; color: white;") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Form Validation and Show Password Toggles -->
+<script>
+    // Bootstrap Validation Script
+    (function () {
+        'use strict'
+
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.querySelectorAll('.needs-validation')
+
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+    // Show Password Toggle Functions
+    function togglePasswordVisibility(buttonId, inputId) {
+        var button = document.getElementById(buttonId);
+        var passwordInput = document.getElementById(inputId);
+        var passwordToggleIcon = button.querySelector('i');
+
+        button.addEventListener('click', function () {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordToggleIcon.classList.remove('bi-eye');
+                passwordToggleIcon.classList.add('bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                passwordToggleIcon.classList.remove('bi-eye-slash');
+                passwordToggleIcon.classList.add('bi-eye');
+            }
+        });
+    }
+
+    // Initialize Show Password Toggles for Registration Form
+    togglePasswordVisibility('toggleRegisterPassword', 'registerPassword');
+    togglePasswordVisibility('toggleConfirmRegisterPassword', 'confirmRegisterPassword');
+
+    // Initialize Show Password Toggles for Change Password Form
+    togglePasswordVisibility('toggleCurrentPassword', 'currentPassword');
+    togglePasswordVisibility('toggleNewPassword', 'newPassword');
+    togglePasswordVisibility('toggleConfirmNewPassword', 'confirmNewPassword');
+</script>
+{% endblock %}
+

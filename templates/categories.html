@@ -1,41 +1,328 @@
+<!-- templates/categories.html -->
+
 {% extends "base.html" %}
 {% block content %}
-<h3>Manage Categories</h3>
+<div class="container my-5">
+    <h2 class="text-center mb-5" style="color: #424242; position: relative; display: inline-block;">
+        Manage Categories and Tables
+        <span style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 120px; height: 3px; background: #1976D2;"></span>
+    </h2>
 
-<form method="POST">
-  {{ form.hidden_tag() }}
-  <div class="mb-3">
-    {{ form.name.label(class_='form-label') }}
-    {{ form.name(class_='form-control') }}
-  </div>
-  <div class="text-end">
-    {{ form.submit(class_='btn btn-success') }}
-  </div>
-</form>
+    <div class="row">
+        <!-- Add Category Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header" style="background: linear-gradient(to right, #512DA8, #3F51B5); color: #FFFFFF;">
+                    <h5 class="mb-0">Add New Category</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form_category.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form_category.name.label(class_='form-label') }}
+                            {{ form_category.name(class_='form-control', placeholder="Enter category name", required=True) }}
+                            {% for error in form_category.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
 
-<hr/>
+                        <div class="text-end">
+                            <button type="submit" name="add_category" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-1"></i> Add Category
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-<h4>Existing Categories</h4>
-<table class="table table-bordered">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Category Name</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for category in categories %}
-    <tr>
-      <td>{{ category.id }}</td>
-      <td>{{ category.name }}</td>
-    </tr>
-    {% endfor %}
-    {% if categories|length == 0 %}
-    <tr>
-      <td colspan="2">No categories found.</td>
-    </tr>
-    {% endif %}
-  </tbody>
-</table>
+        <!-- Add Table Number Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header" style="background: linear-gradient(to right, #00838F, #00ACC1); color: #FFFFFF;">
+                    <h5 class="mb-0">Add New Table Number</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form_table.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form_table.table_number.label(class_='form-label') }}
+                            {{ form_table.table_number(class_='form-control', placeholder="Enter table number (e.g. T1)", required=True) }}
+                            {% for error in form_table.table_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" name="add_table" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Add Table
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border-top: 2px solid #E0E0E0;">
+
+    <!-- Existing Categories -->
+    <h4 class="mb-3" style="color: #283593; font-weight: 600;">Existing Categories</h4>
+    <div class="table-responsive">
+        <table class="table table-hover shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <thead class="table-light" style="background: linear-gradient(to right, #512DA8, #3F51B5); color: #FFFFFF;">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Category Name</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td style="color: #424242;">{{ category.id }}</td>
+                    <td style="color: #424242;">{{ category.name }}</td>
+                    <td>
+                        <!-- Edit Button: Opens Modal -->
+                        <button
+                            class="btn btn-primary btn-sm me-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editCategoryModal"
+                            data-category-id="{{ category.id }}"
+                            data-category-name="{{ category.name }}"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Edit Category"
+                        >
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </button>
+
+                        <!-- Delete Button: Form with CSRF Token -->
+                        <form action="{{ url_for('delete_category', category_id=category.id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button
+                                type="submit"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('Are you sure you want to delete this category?');"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Delete Category"
+                            >
+                                <i class="bi bi-trash-fill"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if categories|length == 0 %}
+                <tr>
+                    <td colspan="3" class="text-center" style="color: #616161;">
+                        <i class="bi bi-info-circle-fill fs-3"></i>
+                        <p class="mt-2">No categories found.</p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm" style="background-color: #1976D2; border: none;">
+                            <i class="bi bi-house-door-fill me-1"></i> View All Sales
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Existing Tables -->
+    <h4 class="mb-3" style="color: #00695C; font-weight: 600;">Existing Tables</h4>
+    <div class="table-responsive">
+        <table class="table table-hover shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <thead class="table-light" style="background: linear-gradient(to right, #00838F, #00ACC1); color: #FFFFFF;">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Table Number</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for table in tables %}
+                <tr>
+                    <td style="color: #424242;">{{ table.id }}</td>
+                    <td style="color: #424242;">{{ table.table_number }}</td>
+                    <td>
+                        <!-- Edit Button: Opens Modal -->
+                        <button
+                            class="btn btn-success btn-sm me-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editTableModal"
+                            data-table-id="{{ table.id }}"
+                            data-table-number="{{ table.table_number }}"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Edit Table Number"
+                        >
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </button>
+
+                        <!-- Delete Button: Form with CSRF Token -->
+                        <form action="{{ url_for('delete_table', table_id=table.id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button
+                                type="submit"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('Are you sure you want to delete this table number?');"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Delete Table Number"
+                            >
+                                <i class="bi bi-trash-fill"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if tables|length == 0 %}
+                <tr>
+                    <td colspan="3" class="text-center" style="color: #616161;">
+                        <i class="bi bi-info-circle-fill fs-3"></i>
+                        <p class="mt-2">No table numbers found.</p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm" style="background-color: #1976D2; border: none;">
+                            <i class="bi bi-house-door-fill me-1"></i> View All Sales
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div
+        class="modal fade"
+        id="editCategoryModal"
+        tabindex="-1"
+        aria-labelledby="editCategoryModalLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 12px;">
+                <div class="modal-header" style="background-color: #283593; color: white;">
+                    <h5 class="modal-title" id="editCategoryModalLabel">Edit Category</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="color: #424242;">
+                    <form id="editCategoryForm" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="editCategoryName" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="editCategoryName" name="name" required>
+                            <div class="invalid-feedback">
+                                Please enter a valid category name.
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f9fa;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Table Modal -->
+    <div
+        class="modal fade"
+        id="editTableModal"
+        tabindex="-1"
+        aria-labelledby="editTableModalLabel"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 12px;">
+                <div class="modal-header" style="background-color: #00695C; color: white;">
+                    <h5 class="modal-title" id="editTableModalLabel">Edit Table Number</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="color: #424242;">
+                    <form id="editTableForm" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="editTableNumber" class="form-label">Table Number</label>
+                            <input type="text" class="form-control" id="editTableNumber" name="table_number" required>
+                            <div class="invalid-feedback">
+                                Please enter a valid table number.
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f9fa;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-Side Validation and Edit Modal Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+            // Enable Bootstrap validation
+            (function() {
+                'use strict';
+                const forms = document.querySelectorAll('.needs-validation');
+                Array.prototype.slice.call(forms).forEach(function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            })();
+
+            // Handle Edit Category Modal Population
+            const editCategoryModal = document.getElementById('editCategoryModal');
+            editCategoryModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const categoryId = button.getAttribute('data-category-id');
+                const categoryName = button.getAttribute('data-category-name');
+
+                // Update the form action
+                const form = document.getElementById('editCategoryForm');
+                form.action = `/edit_category/${categoryId}`;
+
+                // Populate the input fields
+                document.getElementById('editCategoryName').value = categoryName;
+            });
+
+            // Handle Edit Table Modal Population
+            const editTableModal = document.getElementById('editTableModal');
+            editTableModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const tableId = button.getAttribute('data-table-id');
+                const tableNumber = button.getAttribute('data-table-number');
+
+                // Update the form action
+                const form = document.getElementById('editTableForm');
+                form.action = `/edit_table/${tableId}`;
+
+                // Populate the input fields
+                document.getElementById('editTableNumber').value = tableNumber;
+            });
+        });
+    </script>
+</div>
 {% endblock %}
 

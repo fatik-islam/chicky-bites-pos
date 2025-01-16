@@ -1,23 +1,94 @@
+<!-- templates/login.html -->
+
 {% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-4">
-    <h2 class="text-center mb-4">Login</h2>
-    <form method="POST" action="">
-      {{ form.hidden_tag() }}
-      <div class="mb-3">
-        {{ form.username.label(class_='form-label') }}
-        {{ form.username(class_='form-control') }}
-      </div>
-      <div class="mb-3">
-        {{ form.password.label(class_='form-label') }}
-        {{ form.password(class_='form-control') }}
-      </div>
-      <div class="text-center">
-        {{ form.submit(class_='btn btn-primary') }}
-      </div>
-    </form>
-  </div>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card shadow-sm" style="border: none; border-radius: 15px; background-color: #F5F5F5;">
+                <div class="card-header text-white d-flex justify-content-center align-items-center" style="background: linear-gradient(to right, #1976D2, #512DA8); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h2 class="mb-0" style="font-weight: bold;">Login</h2>
+                </div>
+                <div class="card-body p-5">
+                    <form method="POST" action="" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Username Field -->
+                        <div class="mb-4">
+                            {{ form.username.label(class="form-label fw-bold text-secondary") }}
+                            {{ form.username(class="form-control form-control-lg", placeholder="Enter your username", required=True, autofocus=True) }}
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Password Field with Show Password Toggle -->
+                        <div class="mb-4">
+                            {{ form.password.label(class="form-label fw-bold text-secondary") }}
+                            <div class="input-group">
+                                {{ form.password(class="form-control form-control-lg", placeholder="Enter your password", required=True, id="password") }}
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% for error in form.password.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg shadow-sm", style="background: linear-gradient(to right, #1976D2, #512DA8); border: none;") }}
+                        </div>
+                    </form>
+                    
+                    <!-- Optional: Links for Registration -->
+                    <div class="mt-4 text-center">
+                        <p class="text-secondary">Don't have an account? <a href="{{ url_for('register') }}" class="text-decoration-none" style="color: #1976D2;">Register here</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Client-Side Validation and Show Password Script -->
+<script>
+    // Bootstrap Validation Script
+    (function() {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+
+    // Show Password Toggle Script
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const passwordInput = document.getElementById('password');
+        const passwordToggleIcon = this.querySelector('i');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            passwordToggleIcon.classList.remove('bi-eye');
+            passwordToggleIcon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            passwordToggleIcon.classList.remove('bi-eye-slash');
+            passwordToggleIcon.classList.add('bi-eye');
+        }
+    });
+</script>
 {% endblock %}
 

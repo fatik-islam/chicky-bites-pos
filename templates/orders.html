@@ -1,205 +1,316 @@
-{% extends "base.html" %}
+<!-- UPDATED templates/orders.html -->
+
+{% extends 'base.html' %}
+
 {% block content %}
-<h3>New Order</h3>
+<div class="container my-5" style="background-color: #FFFFFF; padding: 40px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <h2 class="text-center mb-5" style="color: #333333; position: relative; display: inline-block;">
+        New Order
+        <span style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background: linear-gradient(to right, #1976D2, #512DA8); border-radius: 2px;"></span>
+    </h2>
 
-<div class="row">
-  <!-- Left side: Cart table & totals -->
-  <div class="col-md-7">
-    <h5>Order Items</h5>
-    <table class="table table-bordered" id="orderTable">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th style="width:90px;">Qty</th>
-          <th>Price</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Cart items inserted via JavaScript -->
-      </tbody>
-    </table>
+    <div class="row">
+        <!-- Left side: Order form & update button -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4" style="border: none; border-radius: 15px; background-color: #E3F2FD;">
+                <div class="card-header text-white d-flex justify-content-between align-items-center"
+                     style="background: linear-gradient(to right, #0288D1, #01579B); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h5 class="mb-0" style="font-weight: bold;">Order Items</h5>
+                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#updateOrderModal"
+                            data-bs-toggle="tooltip" title="Update Existing Orders">
+                        <i class="bi bi-arrow-repeat"></i> Update Orders
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <form id="orderForm" class="needs-validation" novalidate method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Hidden input to store cart data -->
+                        {{ form.cart(id="cartInput") }}
+                        
+                        <!-- Hidden input to store order ID (for editing) -->
+                        <input type="hidden" id="orderId" name="order_id" value="">
 
-    <!-- Totals display -->
-    <div class="row mb-3">
-      <div class="col text-end">
-        <p>Sub total: <span id="subTotal">0.00</span></p>
-        <p>GST (0.00%): <span id="gstAmount">0.00</span></p>
-        <p>Net amount: <span id="netAmount">0.00</span></p>
-      </div>
+                        <!-- Hidden fields to store Dine-in and Delivery details so they get submitted -->
+                        <input type="hidden" id="hiddenDineInTableId"     name="table_id"        value="">
+                        <input type="hidden" id="hiddenDeliveryFirstName"  name="first_name"      value="">
+                        <input type="hidden" id="hiddenDeliveryLastName"   name="last_name"       value="">
+                        <input type="hidden" id="hiddenDeliveryAddress"    name="address"         value="">
+                        <input type="hidden" id="hiddenDeliveryContactNum" name="contact_number"  value="">
+
+                        <!-- We store the user's selected order types in multiple hidden inputs -->
+                        <div id="orderTypeHiddenContainer"></div>
+
+                        <!-- Order Type Toggle Switches -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary">Order Type</label>
+                            <div class="d-flex">
+                                {% for order_type in ['Dine-in', 'Takeaway', 'Delivery'] %}
+                                <div class="form-check form-switch me-3">
+                                    <input class="form-check-input order-type-toggle" type="checkbox" id="{{ order_type|lower }}Toggle" value="{{ order_type }}">
+                                    <label class="form-check-label" for="{{ order_type|lower }}Toggle">
+                                        {{ order_type }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="invalid-feedback d-block" id="orderTypeFeedback">
+                                Please select at least one order type.
+                            </div>
+                        </div>
+
+                        <!-- Order Table -->
+                        <div class="mb-4">
+                            <table class="table table-bordered table-hover" id="orderTable">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Product ID</th>
+                                        <th>Product Name</th>
+                                        <th>Quantity</th>
+                                        <th>Price (Rs)</th>
+                                        <th>Amount (Rs)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Cart items will be dynamically added here -->
+                                </tbody>
+                            </table>
+                            <div id="emptyCart" class="empty-state text-center" style="display: block;">
+                                <p>Your cart is empty. Add some products!</p>
+                            </div>
+                        </div>
+
+                        <!-- Totals display -->
+                        <div class="row mb-3">
+                            <div class="col text-end">
+                                <p>Sub total: <span id="subTotal">0.00</span></p>
+                                <p>GST (10.00%): <span id="gstAmount">0.00</span></p>
+                                <p><strong>Net amount: <span id="netAmount">0.00</span></strong></p>
+                            </div>
+                        </div>
+
+                        <!-- Order action buttons -->
+                        <div class="d-flex gap-3">
+                            <!-- Save/Update Order Button -->
+                            <button type="submit" name="save_order" value="save_order" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Order
+                            </button>
+                            <!-- Cancel Order Button -->
+                            <button type="button" class="btn btn-danger" id="cancelOrderBtn">
+                                <i class="bi bi-x-circle"></i> Cancel Order
+                            </button>
+                            <!-- Print Kitchen Invoice Button -->
+                            <button type="submit" name="print_kitchen" value="print_kitchen" class="btn btn-success">
+                                <i class="bi bi-printer"></i> Print Kitchen Invoice
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right side: Product Categories & Products -->
+        <div class="col-md-6">
+            <!-- Categories Card -->
+            <div class="card shadow-sm mb-4" style="border: none; border-radius: 15px; background-color: #FFF3E0;">
+                <div class="card-header text-white d-flex justify-content-between align-items-center"
+                     style="background: linear-gradient(to right, #FF7043, #FF5722); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h5 class="mb-0" style="font-weight: bold;">Product Categories</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row" id="categoryList">
+                        <!-- 'All categories' card -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card category-card" data-category-id="all" 
+                                 style="cursor: pointer; border-radius: 10px; background: linear-gradient(to bottom right, #42A5F5, #1E88E5); color: white;">
+                                <div class="card-body d-flex justify-content-center align-items-center">
+                                    <h5 class="card-title mb-0">All Categories</h5>
+                                </div>
+                            </div>
+                        </div>
+                        {% for category in categories %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card category-card" data-category-id="{{ category.id }}" 
+                                     style="cursor: pointer; border-radius: 10px; background: linear-gradient(to bottom right, #42A5F5, #1E88E5); color: white;">
+                                    <div class="card-body d-flex justify-content-center align-items-center">
+                                        <h5 class="card-title mb-0">{{ category.name }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products + Product Search -->
+            <div class="card shadow-sm" style="border: none; border-radius: 15px; background-color: #FFFFFF;">
+                <div class="card-header text-white d-flex justify-content-between align-items-center"
+                     style="background: linear-gradient(to right, #1976D2, #512DA8); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h5 class="mb-0" style="font-weight: bold;">Products</h5>
+                    <!-- Product Search -->
+                    <div class="ms-auto">
+                        <input type="text" id="productSearch" class="form-control" placeholder="Search products...">
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row" id="productList">
+                        {% for product in products if not product.is_sub_product %}
+                            <div class="col-md-3 mb-4 product-item" 
+                                 data-category="{{ product.category_id }}"
+                                 data-id="{{ product.id }}"
+                                 data-price="{{ product.price }}">
+                                <div class="card h-100 shadow-sm" style="cursor: pointer;">
+                                    <!-- Show only product name in the card text (no price or stock) -->
+                                    <div class="card-body d-flex flex-column text-center">
+                                        <h5 class="card-title" style="color: #283593;">
+                                            {{ product.name }}
+                                        </h5>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div id="noProducts" class="empty-state text-center" style="display: none;">
+                        <p>No products available in this category or search.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Order action buttons -->
-    <div class="d-flex gap-2">
-      <button class="btn btn-primary" id="saveOrderBtn">Save</button>
-      <button class="btn btn-secondary" id="cancelOrderBtn">Cancel order</button>
-      <button class="btn btn-success" id="printBtn">Print receipt</button>
+    <!-- Dine-in Details Modal -->
+    <div class="modal fade" id="dineInModal" tabindex="-1" aria-labelledby="dineInModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(to right, #42A5F5, #1E88E5);">
+                    <h5 class="modal-title" id="dineInModalLabel">Dine-in Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- We do not post via AJAX; only storing in hidden fields in the main form -->
+                    <form id="dineInForm" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="dineInTableNumber" class="form-label">Table Number</label>
+                            <select class="form-select" id="dineInTableNumber" required>
+                                <option value="">Select Table</option>
+                                {% for table in form.table_id.choices %}
+                                    <option value="{{ table[0] }}">{{ table[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a table number.
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="saveDineInDetailsBtn">
+                            Save Dine-in Details
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Right side: Search, category filters, product buttons -->
-  <div class="col-md-5">
-    <div class="mb-3">
-      <input
-        type="text"
-        id="productSearch"
-        class="form-control"
-        placeholder="Search and add products"
-      />
+    <!-- Delivery Details Modal -->
+    <div class="modal fade" id="deliveryModal" tabindex="-1" aria-labelledby="deliveryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(to right, #FF7043, #FF5722);">
+                    <h5 class="modal-title" id="deliveryModalLabel">Delivery Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="deliveryForm" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="deliveryFirstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="deliveryFirstName" required placeholder="Enter first name">
+                            <div class="invalid-feedback">
+                                Please enter the customer's first name.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deliveryLastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="deliveryLastName" required placeholder="Enter last name">
+                            <div class="invalid-feedback">
+                                Please enter the customer's last name.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deliveryAddress" class="form-label">Address</label>
+                            <textarea class="form-control" id="deliveryAddress" rows="3" required placeholder="Enter delivery address"></textarea>
+                            <div class="invalid-feedback">
+                                Please provide a delivery address.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deliveryContactNumber" class="form-label">Contact Number</label>
+                            <input type="text" class="form-control" id="deliveryContactNumber" required pattern="\d{10}" placeholder="Enter 10-digit contact number">
+                            <div class="invalid-feedback">
+                                Please enter a valid 10-digit contact number.
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="saveDeliveryDetailsBtn">
+                            Save Delivery Details
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Category Buttons -->
-    <div class="mb-3 d-flex flex-wrap" style="gap: 6px;">
-      <!-- 'All' filter -->
-      <button class="btn btn-dark categoryFilterBtn" data-category="all">All</button>
-      {% for cat in categories %}
-        <button
-          class="btn btn-secondary categoryFilterBtn"
-          data-category="{{ cat.id }}"
-        >
-          {{ cat.name }}
-        </button>
-      {% endfor %}
+    <!-- Update Order Modal -->
+    <div class="modal fade" id="updateOrderModal" tabindex="-1" aria-labelledby="updateOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(to right, #FFA726, #FB8C00); color: white;">
+                    <h5 class="modal-title" id="updateOrderModalLabel">Pending Orders</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if orders %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Type</th>
+                                        <th>Total Amount (Rs)</th>
+                                        <th>Date Ordered</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>
+                                                {% set type_names = [] %}
+                                                {% for ot in order.order_types %}
+                                                    {% set _ = type_names.append(ot.name) %}
+                                                {% endfor %}
+                                                {{ type_names|join(', ') }}
+                                            </td>
+                                            <td>Rs{{ '{:.2f}'.format(order.total_amount) }}</td>
+                                            <td>{{ order.date_ordered.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-warning edit-order-btn" data-order-id="{{ order.id }}" data-bs-toggle="tooltip" title="Edit Order">
+                                                    <i class="bi bi-pencil-square"></i> Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state text-center">
+                            <p>No pending orders found.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- Product Buttons -->
-    <div class="d-flex flex-wrap" style="gap: 6px;">
-      {% for product in products %}
-        <button
-          class="btn btn-primary productBtn"
-          data-id="{{ product.id }}"
-          data-name="{{ product.name }}"
-          data-price="{{ product.price }}"
-          data-category="{{ product.category_id }}"
-        >
-          {{ product.name }}
-        </button>
-      {% endfor %}
-    </div>
-  </div>
 </div>
-
-<script>
-  // Basic front-end cart
-  let cart = [];
-  const orderTableBody = document.querySelector('#orderTable tbody');
-  const subTotalEl     = document.getElementById('subTotal');
-  const gstAmountEl    = document.getElementById('gstAmount');
-  const netAmountEl    = document.getElementById('netAmount');
-
-  function addToCart(prodId, prodName, prodPrice) {
-    const existingItem = cart.find(item => item.id === prodId);
-    if (existingItem) {
-      existingItem.qty += 1;
-      existingItem.amount = existingItem.qty * existingItem.price;
-    } else {
-      cart.push({
-        id: prodId,
-        name: prodName,
-        price: parseFloat(prodPrice),
-        qty: 1,
-        amount: parseFloat(prodPrice)
-      });
-    }
-    renderCart();
-  }
-
-  function renderCart() {
-    orderTableBody.innerHTML = '';
-    let subtotal = 0;
-
-    cart.forEach(item => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${item.name}</td>
-        <td>
-          <input
-            type="number"
-            min="1"
-            value="${item.qty}"
-            data-id="${item.id}"
-            class="form-control cartQty"
-            style="width:70px;"
-          >
-        </td>
-        <td>${item.price.toFixed(2)}</td>
-        <td>${item.amount.toFixed(2)}</td>
-      `;
-      orderTableBody.appendChild(row);
-      subtotal += item.amount;
-    });
-
-    // Attach event to quantity inputs
-    document.querySelectorAll('.cartQty').forEach(input => {
-      input.addEventListener('change', function(e) {
-        const newQty = parseInt(e.target.value);
-        const prodId = e.target.dataset.id;
-        const cartItem = cart.find(i => i.id === prodId);
-        if (cartItem && newQty >= 1) {
-          cartItem.qty = newQty;
-          cartItem.amount = cartItem.price * newQty;
-        }
-        renderCart();
-      });
-    });
-
-    // Example (hardcoded) GST = 0% here
-    subTotalEl.textContent  = subtotal.toFixed(2);
-    gstAmountEl.textContent = '0.00';
-    netAmountEl.textContent = subtotal.toFixed(2);
-  }
-
-  // Product button clicks
-  document.querySelectorAll('.productBtn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const prodId = this.dataset.id;
-      const prodName = this.dataset.name;
-      const prodPrice = this.dataset.price;
-      addToCart(prodId, prodName, prodPrice);
-    });
-  });
-
-  // Category filter
-  document.querySelectorAll('.categoryFilterBtn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const catId = this.dataset.category;
-      document.querySelectorAll('.productBtn').forEach(pBtn => {
-        if (catId === 'all') {
-          pBtn.style.display = 'inline-block';
-        } else {
-          pBtn.style.display = (pBtn.dataset.category === catId) ? 'inline-block' : 'none';
-        }
-      });
-    });
-  });
-
-  // Product search
-  const productSearch = document.getElementById('productSearch');
-  productSearch.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    document.querySelectorAll('.productBtn').forEach(pBtn => {
-      const name = pBtn.dataset.name.toLowerCase();
-      pBtn.style.display = name.includes(query) ? 'inline-block' : 'none';
-    });
-  });
-
-  // Print button
-  document.getElementById('printBtn').addEventListener('click', function() {
-    window.print();
-  });
-
-  // Save order (stub)
-  document.getElementById('saveOrderBtn').addEventListener('click', function() {
-    alert('Order saved (placeholder). Implement server POST if needed.');
-  });
-
-  // Cancel order
-  document.getElementById('cancelOrderBtn').addEventListener('click', function() {
-    if (confirm('Are you sure you want to cancel this order?')) {
-      cart = [];
-      renderCart();
-    }
-  });
-</script>
 {% endblock %}
 
