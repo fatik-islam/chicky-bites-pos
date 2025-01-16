@@ -1,5 +1,5 @@
 # requirements.txt
-# Updated Requirements for Chicky Bites POS.
+# Updated Requirements for Chicky Bites POS
 
 Flask==2.2.5
 Flask-SQLAlchemy==3.0.5
@@ -14,4 +14,5 @@ itsdangerous==2.2.0
 sqlalchemy==2.0.36
 typing-extensions==4.12.2
 gunicorn==20.1.0
-FPDF==1.7.2  # For PDF export functionality
+FPDF==1.7.2     # For PDF export functionality
+python-dotenv==1.0.0   
