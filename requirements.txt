@@ -4,7 +4,6 @@
 Flask==2.2.5
 Flask-SQLAlchemy==3.0.5
 Flask-WTF==1.1.1
-<<<<<<< HEAD
 Jinja2==3.1.5
 MarkupSafe==3.0.2
 WTForms==3.0.1
@@ -15,7 +14,6 @@ itsdangerous==2.2.0
 sqlalchemy==2.0.36
 typing-extensions==4.12.2
 gunicorn==20.1.0
-=======
 Jinja2==3.1.2
 MarkupSafe==2.1.3
 WTForms==3.0.1
@@ -27,5 +25,3 @@ sqlalchemy==2.0.36
 typing-extensions==4.12.2
 gunicorn==20.1.0
 FPDF==1.7.2  # For PDF export functionality
-
->>>>>>> 5c91beb (update)
